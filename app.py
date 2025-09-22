@@ -1436,6 +1436,9 @@ import calendar
 from flask import request, flash, redirect, url_for, render_template
 from flask_login import login_required, current_user
 
+from flask import Response
+import csv
+
 @app.route('/admin/generate_bills', methods=['GET', 'POST'])
 @login_required
 def generate_bills():
@@ -1457,22 +1460,19 @@ def generate_bills():
                 flash("Please provide all required fields", "warning")
                 return redirect(url_for('generate_bills'))
 
-            # Compute first and last day of the month
             year, month = map(int, bill_month.split('-'))
             start_date_obj = date(year, month, 1)
             end_date_obj = date(year, month, calendar.monthrange(year, month)[1])
 
-            # Parse mess closed dates (optional)
+            # Parse mess closed dates
             closed_dates_str = request.form.get('mess_closed_dates', '')
             closed_dates = set()
             if closed_dates_str:
                 closed_dates = set(datetime.strptime(d.strip(), "%d-%m-%Y").date() for d in closed_dates_str.split(','))
 
-            # Active days in month minus closed dates
             active_days = (end_date_obj - start_date_obj).days + 1
             active_days -= sum(1 for d in closed_dates if start_date_obj <= d <= end_date_obj)
 
-            # DB connection
             conn = mysql_pool.get_connection()
             cur = conn.cursor(dictionary=True)
 
@@ -1489,13 +1489,11 @@ def generate_bills():
                 if cur.fetchone():
                     continue
 
-                # Fetch mess cuts overlapping with the month
+                # Fetch mess cuts
                 cur.execute("""
                     SELECT start_date, end_date
                     FROM mess_cut
-                    WHERE user_id=%s
-                      AND start_date <= %s
-                      AND end_date >= %s
+                    WHERE user_id=%s AND start_date <= %s AND end_date >= %s
                 """, (user['id'], end_date_obj, start_date_obj))
                 cuts = cur.fetchall()
 
@@ -1503,20 +1501,12 @@ def generate_bills():
                 for cut in cuts:
                     cut_start = max(cut['start_date'], start_date_obj)
                     cut_end = min(cut['end_date'], end_date_obj)
-
-                    # Generate all dates in this mess cut
                     cut_dates = set(cut_start + timedelta(days=i) for i in range((cut_end - cut_start).days + 1))
-                    # Only consider dates which are NOT closed
                     active_cut_dates = cut_dates - closed_dates
-
-                    # Apply only if >=3 active days
                     if len(active_cut_dates) >= 3:
                         mess_cut_days += len(active_cut_dates)
 
-                # Calculate reduction
-                reduction_amount = round(0.67 * daily_amount * mess_cut_days, 2)
-
-                # 🔹 Fetch fines for this user in billing month (scan fines included)
+                # Fines
                 cur.execute("""
                     SELECT SUM(fine_amount) AS total_fines
                     FROM fines
@@ -1525,46 +1515,70 @@ def generate_bills():
                 fine_row = cur.fetchone()
                 total_fines = fine_row['total_fines'] or 0.0
 
-                # Total amount including establishment fee and fines
-                total_amount = round(daily_amount * active_days - reduction_amount + establishment_fee + total_fines, 2)
+                total_amount = round(daily_amount * active_days - (0.67 * daily_amount * mess_cut_days) + establishment_fee + total_fines, 2)
 
-                # Insert bill into DB
+                # Insert into bills table
                 cur.execute("""
                     INSERT INTO bills
                     (user_id, bill_date, daily_amount, active_days, mess_cut_days, reduction_amount, establishment_fee, total_fines, total_amount)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
-                    user['id'], date.today(), daily_amount, active_days,
-                    mess_cut_days, reduction_amount, establishment_fee, total_fines, total_amount
+                    user['id'], date.today(), daily_amount, active_days, mess_cut_days,
+                    round(0.67 * daily_amount * mess_cut_days,2), establishment_fee, total_fines, total_amount
                 ))
 
-                # Prepare for frontend display
+                # Prepare for frontend
                 bills_generated.append({
                     'user': user['name'],
+                    'daily_amount': daily_amount,
+                    'active_days': active_days,
                     'mess_cut_days': mess_cut_days,
-                    'closed_dates': sorted([d.strftime("%d-%m-%Y") for d in closed_dates if start_date_obj <= d <= end_date_obj]),
+                    'reduction_amount': round(0.67 * daily_amount * mess_cut_days,2),
                     'establishment_fee': establishment_fee,
                     'total_fines': total_fines,
                     'total_amount': total_amount,
-                    'bill_month': bill_month
                 })
 
             conn.commit()
-            flash(f"✅ Bills generated successfully for {len(bills_generated)} users!", "success")
+            flash(f"✅ Bills generated for {len(bills_generated)} users!", "success")
 
         except Exception as e:
             if conn:
                 conn.rollback()
             flash(f"Error generating bills: {str(e)}", "danger")
-
         finally:
             if cur:
                 cur.close()
             if conn:
                 conn.close()
 
-    return render_template('admin_generate_bills.html', bills_generated=bills_generated)
+    # CSV Download
+    if request.args.get('download') == 'csv' and bills_generated:
+        def generate_csv():
+            si = io.StringIO()
+            writer = csv.writer(si)
+            writer.writerow(['User', 'Daily Amount', 'Active Days', 'Mess Cut Days', 'Reduction', 'Establishment Fee', 'Fines', 'Total Amount'])
+            for bill in bills_generated:
+                writer.writerow([
+                    bill['user'],
+                    bill['daily_amount'],
+                    bill['active_days'],
+                    bill['mess_cut_days'],
+                    bill['reduction_amount'],
+                    bill['establishment_fee'],
+                    bill['total_fines'],
+                    bill['total_amount']
+                ])
+            return si.getvalue()
 
+        csv_data = generate_csv()
+        return Response(
+            csv_data,
+            mimetype="text/csv",
+            headers={"Content-Disposition": f"attachment;filename=bills_{date.today().strftime('%Y%m%d')}.csv"}
+        )
+
+    return render_template('admin_generate_bills.html', bills_generated=bills_generated)
 
 from datetime import datetime, time
 
