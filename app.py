@@ -7,18 +7,11 @@ import base64
 from datetime import datetime, time
 from config import Config
 from mysql.connector import pooling
-from flask_mysqldb import MySQL
-
 
 # ---------------- Flask App ----------------
 app = Flask(__name__)
+app.config.from_object(Config)
 
-dbconfig = {
-    "host": "localhost",    # or "localhost"
-    "user": "root",         # your MySQL username
-    "password": "mysql123",         # your MySQL password
-    "database": "w_mess_app"  # your database name
-}
 # ---------------- MySQL Connection Pool ----------------
 # app.py (or wherever you configure your DB)
 import os
@@ -30,23 +23,46 @@ mysql_pool = pooling.MySQLConnectionPool(
     pool_size=5,
     pool_reset_session=True,
     host="mydb.cfc0uui6evlw.eu-north-1.rds.amazonaws.com",  # ✅ RDS endpoint
-    database="mess_app",  # ✅ your database name
+    database="messdb2",  # ✅ your database name
     user="root",          # ✅ your RDS username
     password="Admin321"   # ✅ your RDS password
 )
-app = Flask(__name__)
-app.config.from_object(Config)
 
-mysql = MySQL(app)
-# Connect directly
-def get_db_connection():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='mysql123',
-        database='w_mess_app'
+
+# --- Load DB config from environment variables ---
+dbconfig = {
+    "host": os.environ.get("MYSQL_HOST"),
+    "user": os.environ.get("MYSQL_USER"),
+    "password": os.environ.get("MYSQL_PASSWORD"),
+    "database": os.environ.get("MYSQL_DB"),
+    "port": int(os.environ.get("MYSQL_PORT", 3306))
+    
+}
+
+
+# --- Setup MySQL connection pool ---
+try:
+    mysql_pool = pooling.MySQLConnectionPool(
+        pool_name="mypool",
+        pool_size=10,          # number of connections in the pool
+        pool_reset_session=True,
+        **dbconfig
     )
-# ---------------- LOGIN MANAGER ----------------
+    print("✅ MySQL connection pool created successfully")
+except Error as e:
+    print(f"❌ Error creating MySQL connection pool: {e}")
+    raise
+
+# --- Helper function to get connection ---
+def get_db_connection():
+    try:
+        return mysql_pool.get_connection()
+    except Error as e:
+        print(f"❌ Error getting connection from pool: {e}")
+        raise
+
+
+    # ---------------- LOGIN MANAGER ----------------
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
