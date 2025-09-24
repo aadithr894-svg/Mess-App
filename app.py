@@ -20,7 +20,7 @@ from mysql.connector import pooling
 
 mysql_pool = pooling.MySQLConnectionPool(
     pool_name="mypool",
-    pool_size=5,
+    pool_size=3,
     pool_reset_session=True,
     host="mydb.cfc0uui6evlw.eu-north-1.rds.amazonaws.com",  # ✅ RDS endpoint
     database="messdb2",  # ✅ your database name
@@ -39,7 +39,13 @@ dbconfig = {
     
 }
 
-
+dbconfig = {
+    "host": "localhost",   # Use IP instead of "localhost"
+    "user": "root",
+    "password": "mysql123",
+    "database": "w_mess_app",
+    "port": 3306
+}
 # --- Setup MySQL connection pool ---
 try:
     mysql_pool = pooling.MySQLConnectionPool(
@@ -1447,13 +1453,24 @@ import calendar
 from flask import request, flash, redirect, url_for, render_template
 from flask_login import login_required, current_user
 
-from datetime import date, datetime, timedelta
-import calendar
-from flask import request, flash, redirect, url_for, render_template
-from flask_login import login_required, current_user
+from flask import session, Response, flash, redirect, url_for, render_template
+import io, csv, calendar
+from datetime import datetime, date, timedelta, time
 
-from flask import Response
-import csv
+from flask import session, Response, flash, redirect, url_for, render_template, request
+import io, csv, calendar
+from datetime import datetime, date, timedelta, time
+
+from flask import session, Response, flash, redirect, url_for, render_template, request
+import io, csv, calendar
+from datetime import datetime, date, timedelta, time
+from decimal import Decimal
+
+MESS_WINDOWS = {
+    'breakfast': (time(7,30), time(9,30)),
+    'lunch': (time(12,0), time(14,0)),
+    'dinner': (time(19,0), time(21,0)),
+}
 
 @app.route('/admin/generate_bills', methods=['GET', 'POST'])
 @login_required
@@ -1466,11 +1483,15 @@ def generate_bills():
     conn = None
     cur = None
 
-    if request.method == 'POST':
-        try:
+    try:
+        conn = mysql_pool.get_connection()
+        cur = conn.cursor(dictionary=True, buffered=True)
+
+        if request.method == 'POST':
+            # Get form values
             daily_amount = float(request.form.get('daily_amount', 0))
             establishment_fee = float(request.form.get('establishment_fee', 0))
-            bill_month = request.form.get('bill_month')  # format: 'YYYY-MM'
+            bill_month = request.form.get('bill_month')  # 'YYYY-MM'
 
             if not daily_amount or not bill_month:
                 flash("Please provide all required fields", "warning")
@@ -1479,6 +1500,7 @@ def generate_bills():
             year, month = map(int, bill_month.split('-'))
             start_date_obj = date(year, month, 1)
             end_date_obj = date(year, month, calendar.monthrange(year, month)[1])
+            bill_date = start_date_obj  # store this in bills table
 
             # Parse mess closed dates
             closed_dates_str = request.form.get('mess_closed_dates', '')
@@ -1489,19 +1511,16 @@ def generate_bills():
             active_days = (end_date_obj - start_date_obj).days + 1
             active_days -= sum(1 for d in closed_dates if start_date_obj <= d <= end_date_obj)
 
-            conn = mysql_pool.get_connection()
-            cur = conn.cursor(dictionary=True)
-
-            # Fetch all users
-            cur.execute("SELECT id, name FROM users")
+            # Fetch all active users
+            cur.execute("SELECT id, name FROM users WHERE is_active = 1")
             users = cur.fetchall()
 
             for user in users:
-                # Skip bills already generated for this month
+                # Skip if bill already exists for this month
                 cur.execute("""
                     SELECT id FROM bills
-                    WHERE user_id=%s AND bill_date BETWEEN %s AND %s
-                """, (user['id'], start_date_obj, end_date_obj))
+                    WHERE user_id=%s AND bill_date=%s
+                """, (user['id'], bill_date))
                 if cur.fetchone():
                     continue
 
@@ -1522,28 +1541,34 @@ def generate_bills():
                     if len(active_cut_dates) >= 3:
                         mess_cut_days += len(active_cut_dates)
 
-                # Fines
+                # Fines (convert Decimal to float)
                 cur.execute("""
                     SELECT SUM(fine_amount) AS total_fines
                     FROM fines
                     WHERE user_id=%s AND fine_date BETWEEN %s AND %s
                 """, (user['id'], start_date_obj, end_date_obj))
                 fine_row = cur.fetchone()
-                total_fines = fine_row['total_fines'] or 0.0
+                total_fines = float(fine_row['total_fines'] or 0.0)
 
-                total_amount = round(daily_amount * active_days - (0.67 * daily_amount * mess_cut_days) + establishment_fee + total_fines, 2)
+                # Total amount calculation
+                total_amount = round(
+                    daily_amount * active_days - (0.67 * daily_amount * mess_cut_days) +
+                    establishment_fee + total_fines, 2
+                )
 
-                # Insert into bills table
+                # Insert bill
                 cur.execute("""
                     INSERT INTO bills
-                    (user_id, bill_date, daily_amount, active_days, mess_cut_days, reduction_amount, establishment_fee, total_fines, total_amount)
+                    (user_id, bill_date, daily_amount, active_days, mess_cut_days,
+                     reduction_amount, establishment_fee, total_fines, total_amount)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
-                    user['id'], date.today(), daily_amount, active_days, mess_cut_days,
-                    round(0.67 * daily_amount * mess_cut_days,2), establishment_fee, total_fines, total_amount
+                    user['id'], bill_date, daily_amount, active_days, mess_cut_days,
+                    round(0.67 * daily_amount * mess_cut_days,2), establishment_fee,
+                    total_fines, total_amount
                 ))
 
-                # Prepare for frontend
+                # Add to frontend list
                 bills_generated.append({
                     'user': user['name'],
                     'daily_amount': daily_amount,
@@ -1556,53 +1581,57 @@ def generate_bills():
                 })
 
             conn.commit()
+            session['bills_generated'] = bills_generated
             flash(f"✅ Bills generated for {len(bills_generated)} users!", "success")
+            return redirect(url_for('generate_bills'))
 
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            flash(f"Error generating bills: {str(e)}", "danger")
-        finally:
-            if cur:
-                cur.close()
-            if conn:
-                conn.close()
+        # GET: load from session
+        if 'bills_generated' in session:
+            bills_generated = session['bills_generated']
 
-    # CSV Download
-    if request.args.get('download') == 'csv' and bills_generated:
-        def generate_csv():
+        # CSV Download
+        if request.args.get('download') == 'csv' and bills_generated:
             si = io.StringIO()
             writer = csv.writer(si)
-            writer.writerow(['User', 'Daily Amount', 'Active Days', 'Mess Cut Days', 'Reduction', 'Establishment Fee', 'Fines', 'Total Amount'])
+            writer.writerow(['User', 'Daily Amount', 'Active Days', 'Mess Cut Days',
+                             'Reduction', 'Establishment Fee', 'Fines', 'Total Amount'])
             for bill in bills_generated:
                 writer.writerow([
-                    bill['user'],
-                    bill['daily_amount'],
-                    bill['active_days'],
-                    bill['mess_cut_days'],
-                    bill['reduction_amount'],
-                    bill['establishment_fee'],
-                    bill['total_fines'],
+                    bill['user'], bill['daily_amount'], bill['active_days'], bill['mess_cut_days'],
+                    bill['reduction_amount'], bill['establishment_fee'], bill['total_fines'],
                     bill['total_amount']
                 ])
-            return si.getvalue()
+            csv_data = si.getvalue()
+            return Response(
+                csv_data,
+                mimetype="text/csv",
+                headers={"Content-Disposition": f"attachment;filename=bills_{bill_date.strftime('%Y%m')}.csv"}
+            )
 
-        csv_data = generate_csv()
-        return Response(
-            csv_data,
-            mimetype="text/csv",
-            headers={"Content-Disposition": f"attachment;filename=bills_{date.today().strftime('%Y%m%d')}.csv"}
-        )
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        flash(f"Error generating bills: {str(e)}", "danger")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
     return render_template('admin_generate_bills.html', bills_generated=bills_generated)
 
-from datetime import datetime, time
 
-MESS_WINDOWS = {
-    'breakfast': (time(7,30), time(9,30)),
-    'lunch': (time(12,0), time(14,0)),
-    'dinner': (time(19,0), time(21,0)),
-}
+# Reset bills session
+@app.route('/admin/reset_bills', methods=['POST'])
+@login_required
+def reset_bills():
+    if not getattr(current_user, 'is_admin', False):
+        flash("Unauthorized", "danger")
+        return redirect(url_for('admin_dashboard'))
+
+    session.pop('bills_generated', None)
+    flash("✅ Bills reset. You can now generate for the next month.", "success")
+    return redirect(url_for('generate_bills'))
 
 
 
@@ -1674,50 +1703,64 @@ def add_fine():
         flash("Unauthorized", "danger")
         return redirect(url_for('admin_dashboard'))
 
-    conn = mysql_pool.get_connection()
-    cur = conn.cursor(dictionary=True)
-
     today = date.today()
+    meal_type = request.form.get('meal_type', 'breakfast')  # default to breakfast
     non_scanned_users = []
 
+    conn = None
+    cur = None
+
     try:
-        # Fetch users who have not scanned today for any meal
+        conn = mysql_pool.get_connection()
+        cur = conn.cursor(dictionary=True, buffered=True)
+
+        # Fetch users who have NOT scanned for the selected meal today
         cur.execute("""
             SELECT u.id, u.name
             FROM users u
             WHERE u.is_active = 1
             AND u.id NOT IN (
-                SELECT user_id FROM meal_attendance WHERE attendance_date = %s
+                SELECT user_id
+                FROM meal_attendance
+                WHERE attendance_date = %s AND meal_type = %s
             )
-        """, (today,))
+        """, (today, meal_type))
         non_scanned_users = cur.fetchall()
 
-        if request.method == 'POST':
+        if request.method == 'POST' and 'user_id' in request.form:
             fines = request.form.getlist('fine')      # list of fine amounts
             user_ids = request.form.getlist('user_id') # list of user ids
+            meal_type = request.form.get('meal_type')
 
             for uid, fine_amount in zip(user_ids, fines):
                 fine_amount = float(fine_amount) if fine_amount else 0
                 if fine_amount > 0:
-                    # Insert into fines table
+                    # Insert into fines table (using correct column name)
                     cur.execute("""
-                        INSERT INTO fines (user_id, fine_date, amount)
-                        VALUES (%s, %s, %s)
-                        ON DUPLICATE KEY UPDATE amount=%s
-                    """, (uid, today, fine_amount, fine_amount))
+                        INSERT INTO fines (user_id, fine_date, meal_type, fine_amount)
+                        VALUES (%s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE fine_amount=%s
+                    """, (uid, today, meal_type, fine_amount, fine_amount))
             conn.commit()
             flash(f"✅ Fines added for {len(user_ids)} students!", "success")
             return redirect(url_for('add_fine'))
 
     except Exception as e:
-        conn.rollback()
+        if conn:
+            conn.rollback()
         flash(f"Error: {str(e)}", "danger")
     finally:
-        cur.close()
-        conn.close()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
-    return render_template('admin_add_fine.html', non_scanned_users=non_scanned_users, today=today)
-
+    return render_template(
+        'admin_add_fine.html',
+        non_scanned_users=non_scanned_users,
+        today=today,
+        meal_type=meal_type
+    )
 
 
 @app.route('/user/bills')
