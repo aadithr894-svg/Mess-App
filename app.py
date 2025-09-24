@@ -39,13 +39,7 @@ dbconfig = {
     
 }
 
-dbconfig = {
-    "host": "localhost",   # Use IP instead of "localhost"
-    "user": "root",
-    "password": "mysql123",
-    "database": "w_mess_app",
-    "port": 3306
-}
+
 # --- Setup MySQL connection pool ---
 try:
     mysql_pool = pooling.MySQLConnectionPool(
