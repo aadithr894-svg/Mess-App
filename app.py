@@ -44,7 +44,7 @@ dbconfig = {
 try:
     mysql_pool = pooling.MySQLConnectionPool(
         pool_name="mypool",
-        pool_size=10,          # number of connections in the pool
+        pool_size=2,          # number of connections in the pool
         pool_reset_session=True,
         **dbconfig
     )
