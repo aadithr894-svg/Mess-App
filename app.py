@@ -1461,7 +1461,7 @@ from datetime import datetime, date, timedelta, time
 from decimal import Decimal
 
 MESS_WINDOWS = {
-    'breakfast': (time(7,30), time(9,30)),
+    'breakfast': (time(7,30), time(10,30)),
     'lunch': (time(12,0), time(14,0)),
     'dinner': (time(19,0), time(21,0)),
 }
@@ -1698,29 +1698,29 @@ def add_fine():
         return redirect(url_for('admin_dashboard'))
 
     today = date.today()
-    meal_type = request.form.get('meal_type', 'breakfast')  # default to breakfast
-    non_scanned_users = []
+    # Default meal to breakfast unless admin selects another
+    meal_type = request.form.get('meal_type', 'breakfast')
+    users_to_fine = []
 
     conn = None
     cur = None
-
     try:
         conn = mysql_pool.get_connection()
         cur = conn.cursor(dictionary=True, buffered=True)
 
-        # ✅ 1. Remove fines for users who already have attendance for this meal/date
+        # ✅ 1. Remove fines for anyone who has now scanned
         cur.execute("""
             DELETE FROM fines
-            WHERE fine_date = %s AND meal_type = %s
+            WHERE fine_date=%s AND meal_type=%s
               AND user_id IN (
                   SELECT user_id
                   FROM meal_attendance
-                  WHERE attendance_date = %s AND meal_type = %s
+                  WHERE attendance_date=%s AND meal_type=%s
               )
         """, (today, meal_type, today, meal_type))
         conn.commit()
 
-        # ✅ 2. Fetch users who have NOT scanned for the selected meal today
+        # ✅ 2. Fetch active users who **have not scanned yet** (no time restriction)
         cur.execute("""
             SELECT u.id, u.name
             FROM users u
@@ -1728,12 +1728,12 @@ def add_fine():
               AND u.id NOT IN (
                   SELECT user_id
                   FROM meal_attendance
-                  WHERE attendance_date = %s AND meal_type = %s
+                  WHERE attendance_date=%s AND meal_type=%s
               )
         """, (today, meal_type))
-        non_scanned_users = cur.fetchall()
+        users_to_fine = cur.fetchall()
 
-        # ✅ 3. Insert/update fines only for those still absent
+        # ✅ 3. Add or update fines immediately
         if request.method == 'POST' and 'user_id' in request.form:
             fines = request.form.getlist('fine')
             user_ids = request.form.getlist('user_id')
@@ -1748,22 +1748,19 @@ def add_fine():
                         ON DUPLICATE KEY UPDATE fine_amount=%s
                     """, (uid, today, meal_type, fine_amount, fine_amount))
             conn.commit()
-            flash(f"✅ Fines updated for {len(user_ids)} students!", "success")
+            flash(f"✅ Fines recorded for {len(user_ids)} user(s).", "success")
             return redirect(url_for('add_fine'))
 
     except Exception as e:
-        if conn:
-            conn.rollback()
-        flash(f"Error: {str(e)}", "danger")
+        if conn: conn.rollback()
+        flash(f"Error: {e}", "danger")
     finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+        if cur: cur.close()
+        if conn: conn.close()
 
     return render_template(
         'admin_add_fine.html',
-        non_scanned_users=non_scanned_users,
+        non_scanned_users=users_to_fine,  # still-missing users
         today=today,
         meal_type=meal_type
     )
