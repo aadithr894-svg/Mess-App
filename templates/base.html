@@ -3,142 +3,243 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hostel Mess App</title>
+<title>Siberia Mess App</title>
 
-<!-- Google Font -->
+<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
+:root {
+    --sidebar-bg: #1f2937;
+    --sidebar-text: #e5e7eb;
+    --sidebar-hover: #374151;
+    --accent: #6366f1;
+    --content-bg: #f3f4f6;
+    --card-bg: #ffffff;
+    --radius: 16px;
+    --shadow: 0 8px 25px rgba(0,0,0,0.08);
+    --transition: 0.3s ease-in-out;
+}
+
+/* Body */
 body {
-  font-family: 'Inter', sans-serif;
-  background: #f5f6fa;
-  color: #2d2f36;
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: var(--content-bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Header Gradient */
-.navbar-custom {
-  background: linear-gradient(90deg, #6366f1, #4f46e5);
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 200;
+    transition: transform var(--transition);
 }
 
-/* Navbar links hover underline */
-.navbar-custom .nav-link {
-  color: #fff;
-  position: relative;
-  font-weight: 500;
-}
-.navbar-custom .nav-link::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0%;
-  height: 2px;
-  background: #fff;
-  transition: width 0.25s ease;
-}
-.navbar-custom .nav-link:hover::after {
-  width: 100%;
+.sidebar .logo {
+    text-align: center;
+    margin-bottom: 30px;
 }
 
-/* Cards */
-.card-modern {
-  border: none;
-  border-radius: 1rem;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  position: relative;
+.sidebar .logo img {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--accent);
+    transition: transform var(--transition);
 }
-.card-modern:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.1);
+.sidebar .logo img:hover {
+    transform: scale(1.05);
 }
-.card-modern::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0%;
-  height: 4px;
-  background: linear-gradient(90deg, #6366f1, #4f46e5);
-  transition: width 0.25s ease;
-  border-radius: 1rem 1rem 0 0;
+
+.sidebar .logo h2 {
+    font-size: 20px;
+    margin-top: 12px;
+    font-weight: 700;
+    color: #fff;
 }
-.card-modern:hover::before {
-  width: 100%;
+
+.sidebar nav {
+    flex-grow: 1;
+}
+
+.sidebar nav a {
+    display: block;
+    padding: 14px 22px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 8px;
+    margin: 4px 12px;
+    transition: all var(--transition);
+}
+.sidebar nav a:hover,
+.sidebar nav a.active {
+    background: var(--accent);
+    color: #fff;
+    transform: translateX(4px);
+}
+
+.sidebar .logout {
+    padding: 18px 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar .logout a {
+    color: #f87171;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color var(--transition);
+}
+.sidebar .logout a:hover {
+    color: #ff4d4d;
+}
+
+/* Main Content */
+.main-content {
+    margin-left: 250px;
+    flex-grow: 1;
+    padding: 35px 40px;
+    transition: margin-left var(--transition);
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 30px;
+    margin-bottom: 25px;
+    transition: transform var(--transition);
+}
+.card:hover {
+    transform: translateY(-3px);
 }
 
 /* Footer */
 footer {
-  background: #eceef4;
-  color: #666;
-  padding: 2rem 0;
-  margin-top: 3rem;
-  border-top: 1px solid #ddd;
+    text-align: center;
+    padding: 18px;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        z-index: 300;
+    }
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    .main-content {
+        margin-left: 0;
+        padding: 20px;
+    }
+    .mobile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(90deg, #6366f1, #3b82f6);
+        color: white;
+        padding: 14px 20px;
+        position: sticky;
+        top: 0;
+        z-index: 400;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-radius: 0 0 12px 12px;
+    }
+    .hamburger {
+        font-size: 26px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: white;
+        transition: transform var(--transition);
+    }
+    .hamburger:hover {
+        transform: scale(1.1);
+    }
 }
 </style>
 </head>
 <body>
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-custom sticky-top">
-  <div class="container">
-    <a class="navbar-brand text-white fw-bold" href="#">Hostel Mess</a>
-    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon d-flex flex-column justify-content-between" style="width:22px;height:16px;">
-        <span class="bg-white rounded" style="height:2px;"></span>
-        <span class="bg-white rounded" style="height:2px;"></span>
-        <span class="bg-white rounded" style="height:2px;"></span>
-      </span>
-    </button>
-    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-      <ul class="navbar-nav">
-        <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Users</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Bills</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Logout</a></li>
-      </ul>
+<!-- Mobile Header -->
+<div class="mobile-header d-md-none">
+    <span class="fw-bold fs-5">Siberia Mess</span>
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="logo">
+        <img src="{{ url_for('static', filename='Images/logo.png') }}" alt="Logo">
+        <h2>Siberia Mess</h2>
     </div>
-  </div>
-</nav>
+    <nav>
+        {% if current_user.is_authenticated %}
+            {% if current_user.is_admin %}
+                <a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">📊 Dashboard</a>
+                <a href="{{ url_for('users_list') }}" class="{% if request.endpoint == 'users_list' %}active{% endif %}">👥 Users</a>
+                <a href="{{ url_for('new_users_list') }}" class="{% if request.endpoint == 'new_users_list' %}active{% endif %}">🆕 New Users</a>
+                <a href="{{ url_for('mess_cut_list') }}" class="{% if request.endpoint == 'mess_cut_list' %}active{% endif %}">✂️ Mess Cuts</a>
+                <a href="{{ url_for('late_mess_list') }}" class="{% if request.endpoint == 'late_mess_list' %}active{% endif %}">⏰ Late Mess</a>
+		    <a href="{{ url_for('add_fine') }}" class="{% if request.endpoint == 'add_fine' %}active{% endif %}">💰 Add Fine</a>
+
+                <a href="{{ url_for('admin_mess_skips') }}" class="{% if request.endpoint == 'admin_mess_skips' %}active{% endif %}">🚫 Skips {% if skip_count %}<span class="badge bg-primary">{{ skip_count }}</span>{% endif %}</a>
+                <a href="{{ url_for('generate_bills') }}" class="{% if request.endpoint == 'generate_bills' %}active{% endif %}">💳 Bills</a>
+            {% else %}
+                <a href="{{ url_for('user_dashboard') }}" class="{% if request.endpoint == 'user_dashboard' %}active{% endif %}">🏠 Dashboard</a>
+                <a href="{{ url_for('apply_mess_cut') }}" class="{% if request.endpoint == 'apply_mess_cut' %}active{% endif %}">✂️ Apply Cut</a>
+                <a href="{{ url_for('request_late_mess') }}" class="{% if request.endpoint == 'request_late_mess' %}active{% endif %}">⏰ Late Mess</a>
+                <a href="{{ url_for('my_qr') }}" class="{% if request.endpoint == 'my_qr' %}active{% endif %}">📷 My QR</a>
+                <a href="{{ url_for('mess_skip') }}" class="{% if request.endpoint == 'mess_skip' %}active{% endif %}">🚫 Skip</a>
+                <a href="{{ url_for('user_bills') }}" class="{% if request.endpoint == 'user_bills' %}active{% endif %}">💳 My Bill</a>
+            {% endif %}
+        {% endif %}
+    </nav>
+    <div class="logout">
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('logout') }}">🚪 Logout</a>
+        {% else %}
+            <a href="{{ url_for('login') }}">🔑 Login</a>
+        {% endif %}
+    </div>
+</div>
 
 <!-- Main Content -->
-<main class="container my-5">
-  <div class="row g-4">
-    <div class="col-md-6 col-lg-3">
-      <div class="card card-modern h-100 p-4">
-        <h5 class="fw-semibold text-primary">Today's Menu</h5>
-        <p class="mb-0">Breakfast, Lunch, Dinner details go here.</p>
-      </div>
+<div class="main-content">
+    <div class="card">
+        {% block content %}{% endblock %}
     </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card card-modern h-100 p-4">
-        <h5 class="fw-semibold text-primary">Mess Cuts</h5>
-        <p class="mb-0">View and manage mess cut requests.</p>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card card-modern h-100 p-4">
-        <h5 class="fw-semibold text-primary">Late Meals</h5>
-        <p class="mb-0">Request or approve late meal timings.</p>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card card-modern h-100 p-4">
-        <h5 class="fw-semibold text-primary">Bills</h5>
-        <p class="mb-0">Generate and view monthly bills.</p>
-      </div>
-    </div>
-  </div>
-</main>
-
-<!-- Footer -->
-<footer class="text-center">
-  &copy; 2025 Hostel Mess App
-</footer>
+    <footer>
+        &copy; {{ current_year if current_year else "2025" }} Siberia Mess App.
+    </footer>
+</div>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('active');
+}
+</script>
 </body>
 </html>
