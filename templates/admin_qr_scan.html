@@ -46,7 +46,7 @@ let lastScanTime = 0;
 function detectMeal() {
   const now = new Date();
   const hours = now.getHours() + now.getMinutes()/60;
-  if (hours >= 7.5 && hours <= 9.5) return 'breakfast';
+  if (hours >= 7.5 && hours <= 10.5) return 'breakfast';
   if (hours >= 12 && hours <= 14.5) return 'lunch';
   return 'dinner';
 }
