@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Siberia Mess App</title>
+<title>Hostel Mess App</title>
 
 <!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -183,7 +183,7 @@ footer {
 
 <!-- Mobile Header -->
 <div class="mobile-header d-md-none">
-    <span class="fw-bold fs-5">Siberia Mess</span>
+    <span class="fw-bold fs-5">Hostel Mess</span>
     <button class="hamburger" onclick="toggleSidebar()">☰</button>
 </div>
 
@@ -191,7 +191,7 @@ footer {
 <div class="sidebar" id="sidebar">
     <div class="logo">
         <img src="{{ url_for('static', filename='Images/logo.png') }}" alt="Logo">
-        <h2>Siberia Mess</h2>
+        <h2>Hostel Mess</h2>
     </div>
     <nav>
         {% if current_user.is_authenticated %}
@@ -230,7 +230,7 @@ footer {
         {% block content %}{% endblock %}
     </div>
     <footer>
-        &copy; {{ current_year if current_year else "2025" }} Siberia Mess App.
+        &copy; {{ current_year if current_year else "2025" }} Hostel Mess App.
     </footer>
 </div>
 

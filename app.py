@@ -1708,35 +1708,47 @@ def add_fine():
         conn = mysql_pool.get_connection()
         cur = conn.cursor(dictionary=True, buffered=True)
 
-        # Fetch users who have NOT scanned for the selected meal today
+        # ✅ 1. Remove fines for users who already have attendance for this meal/date
+        cur.execute("""
+            DELETE FROM fines
+            WHERE fine_date = %s AND meal_type = %s
+              AND user_id IN (
+                  SELECT user_id
+                  FROM meal_attendance
+                  WHERE attendance_date = %s AND meal_type = %s
+              )
+        """, (today, meal_type, today, meal_type))
+        conn.commit()
+
+        # ✅ 2. Fetch users who have NOT scanned for the selected meal today
         cur.execute("""
             SELECT u.id, u.name
             FROM users u
             WHERE u.is_active = 1
-            AND u.id NOT IN (
-                SELECT user_id
-                FROM meal_attendance
-                WHERE attendance_date = %s AND meal_type = %s
-            )
+              AND u.id NOT IN (
+                  SELECT user_id
+                  FROM meal_attendance
+                  WHERE attendance_date = %s AND meal_type = %s
+              )
         """, (today, meal_type))
         non_scanned_users = cur.fetchall()
 
+        # ✅ 3. Insert/update fines only for those still absent
         if request.method == 'POST' and 'user_id' in request.form:
-            fines = request.form.getlist('fine')      # list of fine amounts
-            user_ids = request.form.getlist('user_id') # list of user ids
+            fines = request.form.getlist('fine')
+            user_ids = request.form.getlist('user_id')
             meal_type = request.form.get('meal_type')
 
             for uid, fine_amount in zip(user_ids, fines):
                 fine_amount = float(fine_amount) if fine_amount else 0
                 if fine_amount > 0:
-                    # Insert into fines table (using correct column name)
                     cur.execute("""
                         INSERT INTO fines (user_id, fine_date, meal_type, fine_amount)
                         VALUES (%s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE fine_amount=%s
                     """, (uid, today, meal_type, fine_amount, fine_amount))
             conn.commit()
-            flash(f"✅ Fines added for {len(user_ids)} students!", "success")
+            flash(f"✅ Fines updated for {len(user_ids)} students!", "success")
             return redirect(url_for('add_fine'))
 
     except Exception as e:
@@ -1755,6 +1767,7 @@ def add_fine():
         today=today,
         meal_type=meal_type
     )
+
 
 
 @app.route('/user/bills')
