@@ -2,9 +2,9 @@
 {% block content %}
 <h2 class="mb-4 text-center">New User Approvals</h2>
 
-<!-- DESKTOP: table layout -->
+<!-- ───────── DESKTOP: table layout ───────── -->
 <div class="d-none d-md-block">
-  <table class="table table-bordered table-hover align-middle">
+  <table class="table table-bordered table-hover align-middle shadow-sm">
     <thead class="table-light">
       <tr>
         <th>Name</th>
@@ -31,19 +31,21 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="6" class="text-center">No new users to approve.</td></tr>
+      <tr>
+        <td colspan="6" class="text-center text-muted">No new users to approve.</td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-<!-- MOBILE: card layout -->
+<!-- ───────── MOBILE: card layout ───────── -->
 <div class="d-md-none">
   {% for user in users %}
-  <div class="card mb-3 shadow-sm">
+  <div class="card mb-3 shadow-sm border-0">
     <div class="card-body">
-      <h5 class="card-title mb-1">{{ user[1] }}</h5>
-      <p class="card-text mb-2">
+      <h5 class="card-title mb-2 fw-semibold">{{ user[1] }}</h5>
+      <p class="mb-2">
         <small class="d-block"><strong>Email:</strong> {{ user[2] }}</small>
         <small class="d-block"><strong>Course:</strong> {{ user[3] }}</small>
         <small class="d-block"><strong>Phone:</strong> {{ user[4] }}</small>
@@ -58,7 +60,7 @@
     </div>
   </div>
   {% else %}
-  <p class="text-center mt-3">No new users to approve.</p>
+  <p class="text-center text-muted mt-3">No new users to approve.</p>
   {% endfor %}
 </div>
 {% endblock %}
