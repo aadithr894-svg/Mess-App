@@ -1689,7 +1689,9 @@ def add_fine():
     """
     Admin can add fines for users who did NOT scan
     for a chosen meal (breakfast, lunch, or dinner),
-    excluding anyone who has an approved mess skip.
+    excluding:
+      • anyone with a mess cut, and
+      • anyone who has an approved mess skip.
     """
     if not getattr(current_user, 'is_admin', False):
         flash("Unauthorized", "danger")
@@ -1717,7 +1719,9 @@ def add_fine():
             """, (today, meal_type, today, meal_type))
             conn.commit()
 
-            # ✨ Exclude users who submitted a skip for today+meal_type
+            # Exclude:
+            #   1. Users with mess_cut flag set (assuming u.mess_cut=1 means cut)
+            #   2. Users with a skip record for today & this meal in mess_skips
             cur.execute("""
                 SELECT u.id, u.name, u.email
                 FROM users AS u
@@ -1726,6 +1730,7 @@ def add_fine():
                       AND m.attendance_date = %s
                       AND m.meal_type = %s
                 WHERE u.is_active = 1
+                  AND (u.mess_cut IS NULL OR u.mess_cut = 0)
                   AND m.user_id IS NULL
                   AND u.id NOT IN (
                       SELECT s.user_id
@@ -1748,10 +1753,14 @@ def add_fine():
                         cur.execute("""
                             INSERT INTO fines (user_id, fine_date, meal_type, fine_amount)
                             VALUES (%s, %s, %s, %s)
-                            ON DUPLICATE KEY UPDATE fine_amount = VALUES(fine_amount)
+                            ON DUPLICATE KEY UPDATE
+                                fine_amount = VALUES(fine_amount)
                         """, (uid, today, meal_type, fine_amount))
                 conn.commit()
-                flash(f"✅ Fines recorded for {meal_type.capitalize()} ({len(user_ids)} user(s)).", "success")
+                flash(
+                    f"✅ Fines recorded for {meal_type.capitalize()} ({len(user_ids)} user(s)).",
+                    "success"
+                )
                 return redirect(url_for('add_fine', meal_type=meal_type))
 
         except Exception as e:
