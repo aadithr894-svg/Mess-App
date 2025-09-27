@@ -12,14 +12,14 @@
 
 <style>
 :root {
-    /* Soft pastel theme */
-    --sidebar-bg: #f8cde0;          /* light pink background */
-    --sidebar-text: #5b3a58;        /* deep mauve text */
-    --sidebar-hover: #f5a9c1;       /* hover pink */
-    --accent: #d084b0;              /* accent lilac */
-    --content-bg: #fdf1f7;          /* page background */
+    /* Modern, cool-toned theme */
+    --sidebar-bg: #1e293b;          /* deep slate */
+    --sidebar-text: #e2e8f0;        /* light gray text */
+    --sidebar-hover: #334155;       /* slightly lighter slate */
+    --accent: #14b8a6;              /* teal accent */
+    --content-bg: #f1f5f9;          /* soft neutral page bg */
     --card-bg: #ffffff;
-    --radius: 20px;
+    --radius: 18px;
     --shadow: 0 6px 20px rgba(0,0,0,0.08);
     --transition: 0.3s ease-in-out;
 }
@@ -35,7 +35,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(90deg, #e5b2ca, #d084b0);
+    background: linear-gradient(90deg, #14b8a6, #0ea5e9); /* teal → blue */
     color: #fff;
     padding: 0.75rem 1rem;
     position: sticky;
@@ -86,31 +86,31 @@ body {
     text-decoration: none;
     font-weight: 600;
     border-radius: 12px;
-    transition: background var(--transition), transform var(--transition);
+    transition: background var(--transition), color var(--transition), transform var(--transition);
 }
 .sidebar nav a:hover,
 .sidebar nav a.active {
     background: var(--sidebar-hover);
-    color: #fff;
+    color: var(--accent);
     transform: translateX(4px);
 }
 .sidebar .logout {
     margin-top: auto;
     padding: 1rem;
-    border-top: 1px solid rgba(91,58,88,0.2);
+    border-top: 1px solid rgba(226,232,240,0.2);
 }
 .sidebar .logout a {
-    color: #b14477;
+    color: #f87171;
     text-decoration: none;
     font-weight: 600;
 }
-.sidebar .logout a:hover { color: #d63d80; }
+.sidebar .logout a:hover { color: #ef4444; }
 
-/* Overlay when sidebar is open */
+/* ─── Overlay ─── */
 .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.35);
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
