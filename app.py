@@ -1163,6 +1163,42 @@ import MySQLdb
 
 # ---------------- ADMIN: LIVE COUNT FOR TODAY ----------------
 
+@app.route('/admin/qr_scan_counts')
+@login_required
+def admin_qr_count():
+    if not getattr(current_user, 'is_admin', False):
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('user_dashboard'))
+
+    counts_by_date = {}
+    conn = mysql_pool.get_connection()          # Get connection from pool
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            SELECT meal_date, meal_type, total_count
+            FROM daily_meal_attendance
+            ORDER BY meal_date ASC
+        """)
+        rows = cur.fetchall()
+
+        for row in rows:
+            date_str = row[0].strftime("%Y-%m-%d")
+            meal_type = row[1]
+            count = row[2]
+
+            if date_str not in counts_by_date:
+                counts_by_date[date_str] = {}
+            counts_by_date[date_str][meal_type] = count
+
+    except MySQLdb.Error as e:
+        flash(f"Error fetching counts: {e}", "danger")
+    finally:
+        cur.close()
+        conn.close()                            # Return connection to pool
+
+    return render_template("admin_qr_count.html", counts_by_date=counts_by_date)
+
 
 
 
