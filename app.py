@@ -1462,43 +1462,50 @@ MESS_WINDOWS = {
 @app.route('/admin/generate_bills', methods=['GET', 'POST'])
 @login_required
 def generate_bills():
+    """
+    Generate monthly bills for all active users.
+
+    • Always creates a bill row even if the user's mess cut covers all days
+      (total_amount can be 0.00).
+    • Counts only days inside the selected month minus mess-cut days that
+      overlap the billing period and minus admin-supplied closed dates.
+    • Includes fines and establishment fee.
+    """
     if not getattr(current_user, 'is_admin', False):
         flash("Unauthorized", "danger")
         return redirect(url_for('admin_dashboard'))
 
     bills_generated = []
-    conn = None
-    cur = None
+    conn = cur = None
 
     try:
         conn = mysql_pool.get_connection()
         cur = conn.cursor(dictionary=True, buffered=True)
 
         if request.method == 'POST':
-            # Get form values
+            # ---- 1. Read form values ---------------------------------------
             daily_amount = float(request.form.get('daily_amount', 0))
             establishment_fee = float(request.form.get('establishment_fee', 0))
-            bill_month = request.form.get('bill_month')  # 'YYYY-MM'
-
+            bill_month = request.form.get('bill_month')   # format YYYY-MM
             if not daily_amount or not bill_month:
                 flash("Please provide all required fields", "warning")
                 return redirect(url_for('generate_bills'))
 
             year, month = map(int, bill_month.split('-'))
             start_date_obj = date(year, month, 1)
-            end_date_obj = date(year, month, calendar.monthrange(year, month)[1])
-            bill_date = start_date_obj  # store this in bills table
+            end_date_obj   = date(year, month, calendar.monthrange(year, month)[1])
+            bill_date      = start_date_obj   # stored as bill_date in table
 
-            # Parse mess closed dates
+            # Closed mess dates provided by admin (dd-mm-YYYY)
             closed_dates_str = request.form.get('mess_closed_dates', '')
             closed_dates = set()
             if closed_dates_str:
-                closed_dates = set(datetime.strptime(d.strip(), "%d-%m-%Y").date() for d in closed_dates_str.split(','))
+                closed_dates = {
+                    datetime.strptime(d.strip(), "%d-%m-%Y").date()
+                    for d in closed_dates_str.split(',') if d.strip()
+                }
 
-            active_days = (end_date_obj - start_date_obj).days + 1
-            active_days -= sum(1 for d in closed_dates if start_date_obj <= d <= end_date_obj)
-
-            # Fetch all active users
+            # ---- 2. Fetch all active users ---------------------------------
             cur.execute("SELECT id, name FROM users WHERE is_active = 1")
             users = cur.fetchall()
 
@@ -1506,65 +1513,85 @@ def generate_bills():
                 # Skip if bill already exists for this month
                 cur.execute("""
                     SELECT id FROM bills
-                    WHERE user_id=%s AND bill_date=%s
+                    WHERE user_id = %s AND bill_date = %s
                 """, (user['id'], bill_date))
                 if cur.fetchone():
                     continue
 
-                # Fetch mess cuts
+                # ---- 3. Base active days (month days minus closed dates) ----
+                total_days_in_month = (end_date_obj - start_date_obj).days + 1
+                user_active_days = total_days_in_month - sum(
+                    1 for d in closed_dates if start_date_obj <= d <= end_date_obj
+                )
+
+                # ---- 4. Mess-cut overlap (subtract overlapping days) --------
                 cur.execute("""
                     SELECT start_date, end_date
                     FROM mess_cut
-                    WHERE user_id=%s AND start_date <= %s AND end_date >= %s
+                    WHERE user_id = %s
+                      AND start_date <= %s
+                      AND end_date   >= %s
                 """, (user['id'], end_date_obj, start_date_obj))
                 cuts = cur.fetchall()
 
                 mess_cut_days = 0
                 for cut in cuts:
                     cut_start = max(cut['start_date'], start_date_obj)
-                    cut_end = min(cut['end_date'], end_date_obj)
-                    cut_dates = set(cut_start + timedelta(days=i) for i in range((cut_end - cut_start).days + 1))
-                    active_cut_dates = cut_dates - closed_dates
-                    if len(active_cut_dates) >= 3:
+                    cut_end   = min(cut['end_date'],   end_date_obj)
+                    cut_dates = {cut_start + timedelta(days=i)
+                                 for i in range((cut_end - cut_start).days + 1)}
+                    # subtract any mess-closed dates from these
+                    active_cut_dates = {d for d in cut_dates if d not in closed_dates}
+                    if len(active_cut_dates) >= 3:     # only count if >=3 days
                         mess_cut_days += len(active_cut_dates)
 
-                # Fines (convert Decimal to float)
+                # Final chargeable days (can be 0, but never negative)
+                chargeable_days = max(user_active_days - mess_cut_days, 0)
+
+                # ---- 5. Fines -----------------------------------------------
                 cur.execute("""
                     SELECT SUM(fine_amount) AS total_fines
                     FROM fines
-                    WHERE user_id=%s AND fine_date BETWEEN %s AND %s
+                    WHERE user_id = %s AND fine_date BETWEEN %s AND %s
                 """, (user['id'], start_date_obj, end_date_obj))
                 fine_row = cur.fetchone()
                 total_fines = float(fine_row['total_fines'] or 0.0)
 
-                # Total amount calculation
+                # ---- 6. Total amount ---------------------------------------
+                reduction_amount = round(0.67 * daily_amount * mess_cut_days, 2)
                 total_amount = round(
-                    daily_amount * active_days - (0.67 * daily_amount * mess_cut_days) +
-                    establishment_fee + total_fines, 2
+                    daily_amount * chargeable_days - reduction_amount
+                    + establishment_fee + total_fines,
+                    2
                 )
 
-                # Insert bill
+                # ---- 7. Insert bill even if chargeable_days == 0 ------------
                 cur.execute("""
                     INSERT INTO bills
-                    (user_id, bill_date, daily_amount, active_days, mess_cut_days,
-                     reduction_amount, establishment_fee, total_fines, total_amount)
+                        (user_id, bill_date, daily_amount, active_days,
+                         mess_cut_days, reduction_amount,
+                         establishment_fee, total_fines, total_amount)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
-                    user['id'], bill_date, daily_amount, active_days, mess_cut_days,
-                    round(0.67 * daily_amount * mess_cut_days,2), establishment_fee,
-                    total_fines, total_amount
+                    user['id'], bill_date,
+                    daily_amount,
+                    chargeable_days,
+                    mess_cut_days,
+                    reduction_amount,
+                    establishment_fee,
+                    total_fines,
+                    total_amount
                 ))
 
-                # Add to frontend list
                 bills_generated.append({
                     'user': user['name'],
                     'daily_amount': daily_amount,
-                    'active_days': active_days,
+                    'active_days': chargeable_days,
                     'mess_cut_days': mess_cut_days,
-                    'reduction_amount': round(0.67 * daily_amount * mess_cut_days,2),
+                    'reduction_amount': reduction_amount,
                     'establishment_fee': establishment_fee,
                     'total_fines': total_fines,
-                    'total_amount': total_amount,
+                    'total_amount': total_amount
                 })
 
             conn.commit()
@@ -1572,11 +1599,11 @@ def generate_bills():
             flash(f"✅ Bills generated for {len(bills_generated)} users!", "success")
             return redirect(url_for('generate_bills'))
 
-        # GET: load from session
+        # ---- GET: restore last generated list ------------------------------
         if 'bills_generated' in session:
             bills_generated = session['bills_generated']
 
-        # CSV Download
+        # ---- CSV download --------------------------------------------------
         if request.args.get('download') == 'csv' and bills_generated:
             si = io.StringIO()
             writer = csv.writer(si)
@@ -1584,28 +1611,34 @@ def generate_bills():
                              'Reduction', 'Establishment Fee', 'Fines', 'Total Amount'])
             for bill in bills_generated:
                 writer.writerow([
-                    bill['user'], bill['daily_amount'], bill['active_days'], bill['mess_cut_days'],
-                    bill['reduction_amount'], bill['establishment_fee'], bill['total_fines'],
+                    bill['user'], bill['daily_amount'], bill['active_days'],
+                    bill['mess_cut_days'], bill['reduction_amount'],
+                    bill['establishment_fee'], bill['total_fines'],
                     bill['total_amount']
                 ])
             csv_data = si.getvalue()
             return Response(
                 csv_data,
                 mimetype="text/csv",
-                headers={"Content-Disposition": f"attachment;filename=bills_{bill_date.strftime('%Y%m')}.csv"}
+                headers={
+                    "Content-Disposition":
+                    f"attachment;filename=bills_{bill_date.strftime('%Y%m')}.csv"
+                }
             )
 
     except Exception as e:
         if conn:
             conn.rollback()
-        flash(f"Error generating bills: {str(e)}", "danger")
+        flash(f"Error generating bills: {e}", "danger")
+        current_app.logger.exception("generate_bills error")
     finally:
         if cur:
             cur.close()
         if conn:
             conn.close()
 
-    return render_template('admin_generate_bills.html', bills_generated=bills_generated)
+    return render_template('admin_generate_bills.html',
+                           bills_generated=bills_generated)
 
 
 # Reset bills session
