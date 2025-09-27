@@ -1454,9 +1454,9 @@ from datetime import datetime, date, timedelta, time
 from decimal import Decimal
 
 MESS_WINDOWS = {
-    'breakfast': (time(7,30), time(10,30)),
+    'breakfast': (time(7,30), time(11,30)),
     'lunch': (time(12,0), time(14,0)),
-    'dinner': (time(19,0), time(21,59)),
+    'dinner': (time(19,0), time(23,59)),
 }
 
 from flask import (

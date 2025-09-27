@@ -2,43 +2,34 @@
 {% block content %}
 <div class="text-center py-5" style="font-family: 'Inter', sans-serif;">
 
-  <h1 class="fw-bold mb-3" 
-      style="color:#b14d7d; font-size:2.5rem;">
-      Welcome to <span style="color:#e798b7;">Hostel Mess App</span>
+  <h1 class="fw-bold mb-3"
+      style="color:#1c4c4f; font-size:2.4rem;">
+      Welcome to <span style="color:#3aa6a0;">Hostel Mess App</span>
   </h1>
-  <p class="mb-5" style="color:#6b4e60; font-size:1.1rem;">
-      Manage your mess attendance, late requests, and mess cuts easily.
+  <p class="mb-5 text-muted" style="font-size:1.1rem;">
+      Manage your mess attendance, late requests, and mess cuts effortlessly.
   </p>
 
   <div class="d-flex justify-content-center flex-wrap gap-4">
 
     <!-- Apply Mess Cut Card -->
     <a href="{{ url_for('apply_mess_cut') }}"
-       class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center"
-       style="
-         background: linear-gradient(135deg,#f9a1c3,#f07bab);
-         width: 180px; height:120px; border-radius:18px;
-         font-size:1.1rem; transition:all .3s;">
+       class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center action-card"
+       style="background: linear-gradient(135deg,#58d8b1,#32bba5);">
       ✂️ Apply Mess Cut
     </a>
 
     <!-- Request Late Mess Card -->
     <a href="{{ url_for('request_late_mess') }}"
-       class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center"
-       style="
-         background: linear-gradient(135deg,#bfa5e0,#9a7bc0);
-         width: 180px; height:120px; border-radius:18px;
-         font-size:1.1rem; transition:all .3s;">
+       class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center action-card"
+       style="background: linear-gradient(135deg,#6cb2f0,#4b92e0);">
       ⏰ Request Late Mess
     </a>
 
     <!-- View QR Code Card -->
     <a href="{{ url_for('my_qr') }}"
-       class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center"
-       style="
-         background: linear-gradient(135deg,#f7c79e,#f3a364);
-         width: 180px; height:120px; border-radius:18px;
-         font-size:1.1rem; transition:all .3s;">
+       class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center action-card"
+       style="background: linear-gradient(135deg,#ffb680,#f78b4f);">
       📷 View QR Code
     </a>
 
@@ -47,10 +38,18 @@
 </div>
 
 <style>
-  /* Soft hover lift effect */
-  a:hover {
-    transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  /* Unified card style */
+  .action-card {
+    width: 180px;
+    height: 120px;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+  }
+  .action-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    text-decoration: none;
   }
 </style>
 {% endblock %}
