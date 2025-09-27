@@ -1,66 +1,84 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2 class="mb-4 text-center">New User Approvals</h2>
+<div class="container py-3">
 
-<!-- ───────── DESKTOP: table layout ───────── -->
-<div class="d-none d-md-block">
-  <table class="table table-bordered table-hover align-middle shadow-sm">
-    <thead class="table-light">
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Course</th>
-        <th>Phone</th>
-        <th>Type</th>
-        <th class="text-center">Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for user in users %}
-      <tr>
-        <td>{{ user[1] }}</td>
-        <td>{{ user[2] }}</td>
-        <td>{{ user[3] }}</td>
-        <td>{{ user[4] }}</td>
-        <td>{{ user[5] }}</td>
-        <td class="text-center">
-          <a href="{{ url_for('approve_new_user', user_id=user[0]) }}"
-             class="btn btn-success btn-sm me-2">Approve</a>
-          <a href="{{ url_for('reject_new_user', user_id=user[0]) }}"
-             class="btn btn-danger btn-sm">Reject</a>
-        </td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="6" class="text-center text-muted">No new users to approve.</td>
-      </tr>
+  <h2 class="mb-4 text-center text-md-start">New User Approvals</h2>
+
+  {# ─── Flash messages (optional) ─── #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
       {% endfor %}
-    </tbody>
-  </table>
-</div>
+    {% endif %}
+  {% endwith %}
 
-<!-- ───────── MOBILE: card layout ───────── -->
-<div class="d-md-none">
-  {% for user in users %}
-  <div class="card mb-3 shadow-sm border-0">
-    <div class="card-body">
-      <h5 class="card-title mb-2 fw-semibold">{{ user[1] }}</h5>
-      <p class="mb-2">
-        <small class="d-block"><strong>Email:</strong> {{ user[2] }}</small>
-        <small class="d-block"><strong>Course:</strong> {{ user[3] }}</small>
-        <small class="d-block"><strong>Phone:</strong> {{ user[4] }}</small>
-        <small class="d-block"><strong>Type:</strong> {{ user[5] }}</small>
-      </p>
-      <div class="d-flex justify-content-between">
-        <a href="{{ url_for('approve_new_user', user_id=user[0]) }}"
-           class="btn btn-success btn-sm w-50 me-1">Approve</a>
-        <a href="{{ url_for('reject_new_user', user_id=user[0]) }}"
-           class="btn btn-danger btn-sm w-50 ms-1">Reject</a>
+  <!-- ───────── Desktop / large screens ───────── -->
+  <div class="d-none d-md-block">
+    <table class="table table-striped table-hover align-middle shadow-sm rounded-3 overflow-hidden">
+      <thead class="table-light">
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Course</th>
+          <th>Phone</th>
+          <th>Type</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user[1] }}</td>
+          <td class="text-break">{{ user[2] }}</td>
+          <td>{{ user[3] }}</td>
+          <td>{{ user[4] }}</td>
+          <td>{{ user[5]|capitalize }}</td>
+          <td class="text-center">
+            <a href="{{ url_for('approve_new_user', user_id=user[0]) }}"
+               class="btn btn-success btn-sm me-2">Approve</a>
+            <a href="{{ url_for('reject_new_user', user_id=user[0]) }}"
+               class="btn btn-danger btn-sm">Reject</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted">No new users to approve.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ───────── Mobile / small screens ───────── -->
+  <div class="d-md-none">
+    {% for user in users %}
+    <div class="card mb-4 border-0 shadow-sm rounded-4">
+      <div class="card-body">
+        <h5 class="card-title fw-semibold mb-3">{{ user[1] }}</h5>
+
+        <ul class="list-unstyled small mb-3">
+          <li><strong>Email:</strong> <span class="text-break">{{ user[2] }}</span></li>
+          <li><strong>Course:</strong> {{ user[3] }}</li>
+          <li><strong>Phone:</strong> {{ user[4] }}</li>
+          <li><strong>Type:</strong> {{ user[5]|capitalize }}</li>
+        </ul>
+
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('approve_new_user', user_id=user[0]) }}"
+             class="btn btn-success btn-lg rounded-pill">Approve</a>
+          <a href="{{ url_for('reject_new_user', user_id=user[0]) }}"
+             class="btn btn-danger btn-lg rounded-pill">Reject</a>
+        </div>
       </div>
     </div>
+    {% else %}
+    <p class="text-center text-muted mt-3">No new users to approve.</p>
+    {% endfor %}
   </div>
-  {% else %}
-  <p class="text-center text-muted mt-3">No new users to approve.</p>
-  {% endfor %}
+
 </div>
 {% endblock %}
