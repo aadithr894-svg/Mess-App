@@ -1680,18 +1680,17 @@ def get_current_meal():
 
     
 from datetime import date
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 
 @app.route('/admin/add_fine', methods=['GET', 'POST'])
 @login_required
 def add_fine():
     """
-    Show all active users who:
-      • have NOT scanned for the chosen meal today,
-      • have NO mess cut,
-      • and have NO approved skip for that meal/date.
-    Admin can assign fines to those users.
+    Admin can add fines for users who did NOT scan for a chosen meal
+    but are not in:
+      • mess_cut table (i.e., mess cut for today)
+      • mess_skips table (skipped this meal today)
     """
     if not getattr(current_user, 'is_admin', False):
         flash("Unauthorized", "danger")
@@ -1701,82 +1700,91 @@ def add_fine():
     meal_type = request.args.get('meal_type') or request.form.get('meal_type')
     users_to_fine = []
 
-    if meal_type:
-        conn = cur = None
-        try:
-            conn = mysql_pool.get_connection()
-            cur = conn.cursor(dictionary=True, buffered=True)
+    if not meal_type:
+        return render_template(
+            'admin_add_fine.html',
+            non_scanned_users=users_to_fine,
+            today=today,
+            meal_type=None
+        )
 
-            # Remove fines for users who have since scanned
-            cur.execute("""
-                DELETE FROM fines
-                WHERE fine_date=%s AND meal_type=%s
-                  AND user_id IN (
-                      SELECT user_id
-                      FROM meal_attendance
-                      WHERE attendance_date=%s
-                        AND meal_type=%s
-                  )
-            """, (today, meal_type, today, meal_type))
+    conn = cur = None
+    try:
+        conn = mysql_pool.get_connection()
+        cur = conn.cursor(dictionary=True, buffered=True)
+
+        # Remove fines for users who have since scanned
+        cur.execute("""
+            DELETE FROM fines
+            WHERE fine_date=%s AND meal_type=%s
+              AND user_id IN (
+                  SELECT user_id
+                  FROM meal_attendance
+                  WHERE attendance_date=%s AND meal_type=%s
+              )
+        """, (today, meal_type, today, meal_type))
+        conn.commit()
+
+        # Users who:
+        #  - are active
+        #  - have NOT scanned today for this meal
+        #  - are NOT in mess_cut table (for today)
+        #  - are NOT in mess_skips table (for today & this meal)
+        cur.execute("""
+            SELECT u.id, u.name, u.email
+            FROM users AS u
+            LEFT JOIN meal_attendance AS m
+                   ON u.id = m.user_id
+                  AND m.attendance_date = %s
+                  AND m.meal_type = %s
+            WHERE u.is_active = 1
+              AND m.user_id IS NULL
+              AND u.id NOT IN (
+                  SELECT mc.user_id
+                  FROM mess_cut AS mc
+                  WHERE mc.cut_date = %s
+              )
+              AND u.id NOT IN (
+                  SELECT s.user_id
+                  FROM mess_skips AS s
+                  WHERE DATE(s.skip_date) = %s
+                    AND s.meal_type = %s
+              )
+            ORDER BY u.name
+        """, (today, meal_type, today, today, meal_type))
+        users_to_fine = cur.fetchall()
+
+        # Insert fines if POST
+        if request.method == 'POST' and 'user_id' in request.form:
+            user_ids = request.form.getlist('user_id')
+            fines = request.form.getlist('fine')
+            inserted = 0
+            for uid, fine_amount in zip(user_ids, fines):
+                try:
+                    fine_val = float(fine_amount) if fine_amount else 0
+                except ValueError:
+                    fine_val = 0
+                if fine_val > 0:
+                    cur.execute("""
+                        INSERT INTO fines (user_id, fine_date, meal_type, fine_amount)
+                        VALUES (%s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE fine_amount = VALUES(fine_amount)
+                    """, (uid, today, meal_type, fine_val))
+                    inserted += 1
             conn.commit()
+            flash(f"✅ Fines recorded for {meal_type.capitalize()} ({inserted} user(s)).", "success")
+            return redirect(url_for('add_fine', meal_type=meal_type))
 
-            # --- MAIN QUERY ---
-            # Exclude:
-            #   1. Users with mess_cut = 1
-            #   2. Users who have a skip for this date+meal
-            #      (DATE() handles DATETIME columns safely)
-            cur.execute("""
-                SELECT u.id, u.name, u.email
-                FROM users AS u
-                LEFT JOIN meal_attendance AS m
-                       ON u.id = m.user_id
-                      AND m.attendance_date = %s
-                      AND m.meal_type = %s
-                WHERE u.is_active = 1
-                  AND (u.mess_cut IS NULL OR u.mess_cut = 0)
-                  AND m.user_id IS NULL
-                  AND u.id NOT IN (
-                      SELECT s.user_id
-                      FROM mess_skips AS s
-                      WHERE DATE(s.skip_date) = %s
-                        AND s.meal_type = %s
-                  )
-                ORDER BY u.name
-            """, (today, meal_type, today, meal_type))
-
-            users_to_fine = cur.fetchall()
-
-            # Insert fines when form submitted
-            if request.method == 'POST' and 'user_id' in request.form:
-                user_ids = request.form.getlist('user_id')
-                fines = request.form.getlist('fine')
-
-                for uid, fine_amount in zip(user_ids, fines):
-                    fine_amount = float(fine_amount) if fine_amount else 0
-                    if fine_amount > 0:
-                        cur.execute("""
-                            INSERT INTO fines (user_id, fine_date, meal_type, fine_amount)
-                            VALUES (%s, %s, %s, %s)
-                            ON DUPLICATE KEY UPDATE
-                                fine_amount = VALUES(fine_amount)
-                        """, (uid, today, meal_type, fine_amount))
-                conn.commit()
-                flash(
-                    f"✅ Fines recorded for {meal_type.capitalize()} "
-                    f"({len(user_ids)} user(s)).",
-                    "success"
-                )
-                return redirect(url_for('add_fine', meal_type=meal_type))
-
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            flash(f"Database error: {e}", "danger")
-        finally:
-            if cur:
-                cur.close()
-            if conn:
-                conn.close()
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        current_app.logger.exception("add_fine: DB error")
+        flash(f"Database error: {e}", "danger")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
     return render_template(
         'admin_add_fine.html',
@@ -1784,6 +1792,7 @@ def add_fine():
         today=today,
         meal_type=meal_type
     )
+
 
 
 
