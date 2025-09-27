@@ -20,10 +20,10 @@
 
     <!-- ───────── Desktop / Tablet Table ───────── -->
     <div class="d-none d-md-block">
-      <table class="table table-hover table-striped align-middle shadow-sm rounded-3 overflow-hidden">
-        <thead class="table-dark">
+      <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden">
+        <thead class="table-primary text-dark">
           <tr>
-            <th>ID</th>
+            <th>#</th>
             <th>Name</th>
             <th>Email</th>
             <th>Phone</th>
@@ -34,8 +34,8 @@
         </thead>
         <tbody>
           {% for user in users %}
-          <tr>
-            <td>{{ user.id }}</td>
+          <tr class="bg-primary-subtle">
+            <td class="fw-semibold">{{ loop.index }}</td>
             <td>{{ user.name }}</td>
             <td class="text-break">{{ user.email }}</td>
             <td>{{ user.phone }}</td>
@@ -56,11 +56,12 @@
     <!-- ───────── Mobile Card Layout ───────── -->
     <div class="d-md-none">
       {% for user in users %}
-      <div class="card mb-4 border-0 shadow-sm rounded-4">
+      <div class="card mb-4 border-0 shadow-sm rounded-4 bg-primary-subtle">
         <div class="card-body">
-          <h5 class="card-title fw-semibold mb-2">{{ user.name }}</h5>
+          <h5 class="card-title fw-semibold mb-2">
+            #{{ loop.index }} – {{ user.name }}
+          </h5>
           <ul class="list-unstyled small mb-3">
-            <li><strong>ID:</strong> {{ user.id }}</li>
             <li><strong>Email:</strong> <span class="text-break">{{ user.email }}</span></li>
             <li><strong>Phone:</strong> {{ user.phone }}</li>
             <li><strong>Course:</strong> {{ user.course }}</li>
@@ -78,7 +79,9 @@
     </div>
 
   {% else %}
-    <div class="alert alert-info text-center mt-4">🎉 No pending users for approval.</div>
+    <div class="alert alert-info text-center mt-4">
+      🎉 No pending users for approval.
+    </div>
   {% endif %}
 
 </div>
