@@ -1687,10 +1687,11 @@ from flask_login import login_required, current_user
 @login_required
 def add_fine():
     """
-    Admin can add fines for users who did NOT scan for a chosen meal
-    but are not in:
-      • mess_cut table (i.e., mess cut for today)
-      • mess_skips table (skipped this meal today)
+    Admin can add fines for users who did NOT scan
+    for a chosen meal (breakfast, lunch, dinner),
+    excluding:
+      • Users with an active mess cut (today between start_date & end_date)
+      • Users who have a skip entry for that meal & date.
     """
     if not getattr(current_user, 'is_admin', False):
         flash("Unauthorized", "danger")
@@ -1725,11 +1726,10 @@ def add_fine():
         """, (today, meal_type, today, meal_type))
         conn.commit()
 
-        # Users who:
-        #  - are active
-        #  - have NOT scanned today for this meal
-        #  - are NOT in mess_cut table (for today)
-        #  - are NOT in mess_skips table (for today & this meal)
+        # Get active users who:
+        #   • have NOT scanned today for this meal
+        #   • are NOT in mess_cut during an active cut period
+        #   • are NOT in mess_skips for this meal & date
         cur.execute("""
             SELECT u.id, u.name, u.email
             FROM users AS u
@@ -1742,7 +1742,7 @@ def add_fine():
               AND u.id NOT IN (
                   SELECT mc.user_id
                   FROM mess_cut AS mc
-                  WHERE mc.cut_date = %s
+                  WHERE %s BETWEEN mc.start_date AND mc.end_date
               )
               AND u.id NOT IN (
                   SELECT s.user_id
@@ -1754,7 +1754,7 @@ def add_fine():
         """, (today, meal_type, today, today, meal_type))
         users_to_fine = cur.fetchall()
 
-        # Insert fines if POST
+        # Handle POST to insert fines
         if request.method == 'POST' and 'user_id' in request.form:
             user_ids = request.form.getlist('user_id')
             fines = request.form.getlist('fine')
