@@ -1679,19 +1679,19 @@ def get_current_meal():
 
 
     
-from flask import render_template, request, flash, redirect, url_for
-from flask_login import login_required, current_user
 from datetime import date
+from flask import render_template, request, redirect, url_for, flash
+from flask_login import login_required, current_user
 
 @app.route('/admin/add_fine', methods=['GET', 'POST'])
 @login_required
 def add_fine():
     """
-    Admin can add fines for users who did NOT scan
-    for a chosen meal (breakfast, lunch, or dinner),
-    excluding:
-      • anyone with a mess cut, and
-      • anyone who has an approved mess skip.
+    Show all active users who:
+      • have NOT scanned for the chosen meal today,
+      • have NO mess cut,
+      • and have NO approved skip for that meal/date.
+    Admin can assign fines to those users.
     """
     if not getattr(current_user, 'is_admin', False):
         flash("Unauthorized", "danger")
@@ -1714,14 +1714,17 @@ def add_fine():
                   AND user_id IN (
                       SELECT user_id
                       FROM meal_attendance
-                      WHERE attendance_date=%s AND meal_type=%s
+                      WHERE attendance_date=%s
+                        AND meal_type=%s
                   )
             """, (today, meal_type, today, meal_type))
             conn.commit()
 
+            # --- MAIN QUERY ---
             # Exclude:
-            #   1. Users with mess_cut flag set (assuming u.mess_cut=1 means cut)
-            #   2. Users with a skip record for today & this meal in mess_skips
+            #   1. Users with mess_cut = 1
+            #   2. Users who have a skip for this date+meal
+            #      (DATE() handles DATETIME columns safely)
             cur.execute("""
                 SELECT u.id, u.name, u.email
                 FROM users AS u
@@ -1735,14 +1738,15 @@ def add_fine():
                   AND u.id NOT IN (
                       SELECT s.user_id
                       FROM mess_skips AS s
-                      WHERE s.skip_date = %s
+                      WHERE DATE(s.skip_date) = %s
                         AND s.meal_type = %s
                   )
                 ORDER BY u.name
             """, (today, meal_type, today, meal_type))
+
             users_to_fine = cur.fetchall()
 
-            # Insert fines
+            # Insert fines when form submitted
             if request.method == 'POST' and 'user_id' in request.form:
                 user_ids = request.form.getlist('user_id')
                 fines = request.form.getlist('fine')
@@ -1758,7 +1762,8 @@ def add_fine():
                         """, (uid, today, meal_type, fine_amount))
                 conn.commit()
                 flash(
-                    f"✅ Fines recorded for {meal_type.capitalize()} ({len(user_ids)} user(s)).",
+                    f"✅ Fines recorded for {meal_type.capitalize()} "
+                    f"({len(user_ids)} user(s)).",
                     "success"
                 )
                 return redirect(url_for('add_fine', meal_type=meal_type))
@@ -1779,7 +1784,6 @@ def add_fine():
         today=today,
         meal_type=meal_type
     )
-
 
 
 
