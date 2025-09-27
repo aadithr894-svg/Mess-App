@@ -1022,6 +1022,36 @@ def scan_qr():
     finally:
         conn.close()
 
+@app.route('/admin/live_count/<meal_type>')
+@login_required
+def live_count(meal_type):
+    """Return the real-time count for the given meal_type (today)."""
+
+    if not getattr(current_user, 'is_admin', False):
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    if meal_type not in ('breakfast', 'lunch', 'dinner'):
+        return jsonify({'success': False, 'message': 'Invalid meal type'}), 400
+
+    today = date.today()
+    total = 0
+    try:
+        conn = mysql_pool.get_connection()
+        cur = conn.cursor(dictionary=True)
+        cur.execute("""
+            SELECT COUNT(*) AS total
+            FROM meal_attendance
+            WHERE attendance_date=%s AND meal_type=%s
+        """, (today, meal_type))
+        row = cur.fetchone()
+        total = row['total'] if row else 0
+    finally:
+        cur.close()
+        conn.close()
+
+    return jsonify({'success': True, 'meal_type': meal_type, 'count': total})
+
+
 
 # -------- ADMIN: VIEW CONFIRMED QR COUNTS --------
 from flask import render_template, jsonify, request, flash
