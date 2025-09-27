@@ -1043,47 +1043,44 @@ def qr_scan_counts():
         cur.execute("""
             SELECT meal_date, meal_type, total_count
             FROM daily_meal_attendance
-            ORDER BY meal_date ASC   -- calendar order
+            ORDER BY meal_date ASC
         """)
         rows = cur.fetchall()
 
         for row in rows:
-            date_obj = row[0]          # might be date/datetime OR string
+            date_obj = row[0]
             meal = row[1]
             count = row[2]
 
-            # Ensure we always have a date object
-            from datetime import datetime, date
+            # normalize date to a date object
             if isinstance(date_obj, str):
                 date_obj = datetime.strptime(date_obj, "%Y-%m-%d").date()
             elif isinstance(date_obj, datetime):
-                date_obj = date_obj.date()  # strip time if needed
+                date_obj = date_obj.date()
 
             if date_obj not in counts_by_date:
                 counts_by_date[date_obj] = {'breakfast': 0, 'lunch': 0, 'dinner': 0}
             counts_by_date[date_obj][meal] = count
 
-    except Exception as e:
-        flash(f"Error fetching counts: {e}", "danger")
     finally:
         cur.close()
         conn.close()
 
-    from calendar import month_name
-    from datetime import datetime
-
     months = [{'value': f"{datetime.now().year}-{i:02}", 'name': month_name[i]} for i in range(1, 13)]
 
-    # Sort ascending
+    # convert to a list of dicts for the template
     sorted_counts = []
     for date_obj, meals in sorted(counts_by_date.items(), key=lambda x: x[0]):
         sorted_counts.append({
-            "date": date_obj.strftime("%d-%m-%Y"),   # formatted for display
-            "month_key": date_obj.strftime("%Y-%m"), # for filtering
+            "date": date_obj.strftime("%d-%m-%Y"),   # shown in Indian format
+            "month_key": date_obj.strftime("%Y-%m"), # used for filtering
             "meals": meals
         })
 
-    return render_template("admin_qr_count.html", counts_by_date=sorted_counts, months=months)
+    return render_template("admin_qr_count.html",
+                           counts_by_date=sorted_counts,
+                           months=months)
+
 
 
 
@@ -1135,95 +1132,7 @@ from datetime import date
 import MySQLdb
 
 # ---------------- ADMIN: LIVE COUNT FOR TODAY ----------------
-@app.route('/admin/live_count/<meal_type>')
-@login_required
-def live_count(meal_type):
-    """
-    Return the real-time number of scans for the given meal_type
-    for today's date. Uses a fresh database query every call so
-    counts are always accurate, even after idle time or multiple workers.
-    """
 
-    # Only admins are allowed to view live counts
-    if not getattr(current_user, "is_admin", False):
-        return jsonify({"success": False, "message": "Unauthorized"}), 403
-
-    today = date.today()
-
-    # Validate the meal_type to avoid SQL injection or bad input
-    if meal_type not in ("breakfast", "lunch", "dinner"):
-        return jsonify({"success": False, "message": "Invalid meal type"}), 400
-
-    total = 0
-    try:
-        conn = mysql_pool.get_connection()          # Get pooled connection
-        cur = conn.cursor(dictionary=True)
-
-        cur.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM meal_attendance
-            WHERE attendance_date = %s AND meal_type = %s
-            """,
-            (today, meal_type)
-        )
-        row = cur.fetchone()
-        total = row["total"] if row else 0
-
-    except Exception as e:
-        # Log the error so you can trace DB problems in logs
-        current_app.logger.exception("DB error in live_count: %s", e)
-
-    finally:
-        # Always return the connection to the pool
-        try:
-            cur.close()
-        except Exception:
-            pass
-        try:
-            conn.close()
-        except Exception:
-            pass
-
-    # Respond with JSON that the frontend can poll
-    return jsonify({"success": True, "meal_type": meal_type, "count": total})
-
-# ---------------- ADMIN: VIEW HISTORICAL QR SCAN COUNTS ----------------
-@app.route('/admin/qr_scan_counts')
-@login_required
-def admin_qr_count():
-    if not getattr(current_user, 'is_admin', False):
-        flash("Unauthorized access", "danger")
-        return redirect(url_for('user_dashboard'))
-
-    counts_by_date = {}
-    conn = mysql_pool.get_connection()          # Get connection from pool
-    cur = conn.cursor()
-
-    try:
-        cur.execute("""
-            SELECT meal_date, meal_type, total_count
-            FROM daily_meal_attendance
-            ORDER BY meal_date ASC
-        """)
-        rows = cur.fetchall()
-
-        for row in rows:
-            date_str = row[0].strftime("%Y-%m-%d")
-            meal_type = row[1]
-            count = row[2]
-
-            if date_str not in counts_by_date:
-                counts_by_date[date_str] = {}
-            counts_by_date[date_str][meal_type] = count
-
-    except MySQLdb.Error as e:
-        flash(f"Error fetching counts: {e}", "danger")
-    finally:
-        cur.close()
-        conn.close()                            # Return connection to pool
-
-    return render_template("admin_qr_count.html", counts_by_date=counts_by_date)
 
 
 
