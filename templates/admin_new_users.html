@@ -1,36 +1,64 @@
 {% extends 'base.html' %}
-
 {% block content %}
-<h2>New User Approvals</h2>
+<h2 class="mb-4 text-center">New User Approvals</h2>
 
-<table border="1" cellpadding="5" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Course</th>
-            <th>Phone</th>
-            <th>Type</th>
-            <th>Action</th>
-        </tr>
+<!-- DESKTOP: table layout -->
+<div class="d-none d-md-block">
+  <table class="table table-bordered table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Course</th>
+        <th>Phone</th>
+        <th>Type</th>
+        <th class="text-center">Action</th>
+      </tr>
     </thead>
     <tbody>
-        {% for user in users %}
-        <tr>
-            <td>{{ user[1] }}</td>
-            <td>{{ user[2] }}</td>
-            <td>{{ user[3] }}</td>
-            <td>{{ user[4] }}</td>
-            <td>{{ user[5] }}</td>
-            <td>
-                <a href="{{ url_for('approve_new_user', user_id=user[0]) }}" class="btn btn-success">Approve</a>
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="6">No new users to approve.</td>
-        </tr>
-        {% endfor %}
+      {% for user in users %}
+      <tr>
+        <td>{{ user[1] }}</td>
+        <td>{{ user[2] }}</td>
+        <td>{{ user[3] }}</td>
+        <td>{{ user[4] }}</td>
+        <td>{{ user[5] }}</td>
+        <td class="text-center">
+          <a href="{{ url_for('approve_new_user', user_id=user[0]) }}"
+             class="btn btn-success btn-sm me-2">Approve</a>
+          <a href="{{ url_for('reject_new_user', user_id=user[0]) }}"
+             class="btn btn-danger btn-sm">Reject</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center">No new users to approve.</td></tr>
+      {% endfor %}
     </tbody>
-</table>
+  </table>
+</div>
+
+<!-- MOBILE: card layout -->
+<div class="d-md-none">
+  {% for user in users %}
+  <div class="card mb-3 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-1">{{ user[1] }}</h5>
+      <p class="card-text mb-2">
+        <small class="d-block"><strong>Email:</strong> {{ user[2] }}</small>
+        <small class="d-block"><strong>Course:</strong> {{ user[3] }}</small>
+        <small class="d-block"><strong>Phone:</strong> {{ user[4] }}</small>
+        <small class="d-block"><strong>Type:</strong> {{ user[5] }}</small>
+      </p>
+      <div class="d-flex justify-content-between">
+        <a href="{{ url_for('approve_new_user', user_id=user[0]) }}"
+           class="btn btn-success btn-sm w-50 me-1">Approve</a>
+        <a href="{{ url_for('reject_new_user', user_id=user[0]) }}"
+           class="btn btn-danger btn-sm w-50 ms-1">Reject</a>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-center mt-3">No new users to approve.</p>
+  {% endfor %}
+</div>
 {% endblock %}
