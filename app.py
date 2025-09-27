@@ -1688,19 +1688,17 @@ from datetime import date
 def add_fine():
     """
     Admin can add fines for users who did NOT scan
-    for a chosen meal (breakfast, lunch, or dinner).
+    for a chosen meal (breakfast, lunch, or dinner),
+    excluding anyone who has an approved mess skip.
     """
     if not getattr(current_user, 'is_admin', False):
         flash("Unauthorized", "danger")
         return redirect(url_for('admin_dashboard'))
 
     today = date.today()
-
-    # Require explicit meal_type; None if not provided
     meal_type = request.args.get('meal_type') or request.form.get('meal_type')
     users_to_fine = []
 
-    # Only query DB if a meal_type is selected
     if meal_type:
         conn = cur = None
         try:
@@ -1719,7 +1717,7 @@ def add_fine():
             """, (today, meal_type, today, meal_type))
             conn.commit()
 
-            # Get active users who have NOT scanned for this meal
+            # ✨ Exclude users who submitted a skip for today+meal_type
             cur.execute("""
                 SELECT u.id, u.name, u.email
                 FROM users AS u
@@ -1729,11 +1727,17 @@ def add_fine():
                       AND m.meal_type = %s
                 WHERE u.is_active = 1
                   AND m.user_id IS NULL
+                  AND u.id NOT IN (
+                      SELECT s.user_id
+                      FROM mess_skips AS s
+                      WHERE s.skip_date = %s
+                        AND s.meal_type = %s
+                  )
                 ORDER BY u.name
-            """, (today, meal_type))
+            """, (today, meal_type, today, meal_type))
             users_to_fine = cur.fetchall()
 
-            # Handle POST to insert fines
+            # Insert fines
             if request.method == 'POST' and 'user_id' in request.form:
                 user_ids = request.form.getlist('user_id')
                 fines = request.form.getlist('fine')
@@ -1744,8 +1748,7 @@ def add_fine():
                         cur.execute("""
                             INSERT INTO fines (user_id, fine_date, meal_type, fine_amount)
                             VALUES (%s, %s, %s, %s)
-                            ON DUPLICATE KEY UPDATE
-                                fine_amount = VALUES(fine_amount)
+                            ON DUPLICATE KEY UPDATE fine_amount = VALUES(fine_amount)
                         """, (uid, today, meal_type, fine_amount))
                 conn.commit()
                 flash(f"✅ Fines recorded for {meal_type.capitalize()} ({len(user_ids)} user(s)).", "success")
@@ -1765,8 +1768,11 @@ def add_fine():
         'admin_add_fine.html',
         non_scanned_users=users_to_fine,
         today=today,
-        meal_type=meal_type  # may be None
+        meal_type=meal_type
     )
+
+
+
 
 @app.route('/user/bills')
 @login_required
