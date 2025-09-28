@@ -1999,6 +1999,9 @@ def reset_late_mess():
         if conn:
             conn.close()
         return f"❌ Error resetting late mess: {str(e)}", 500
+from flask import request, render_template, redirect, url_for, flash
+from flask_login import login_required, current_user
+import calendar
 
 @app.route('/user/mess_skip', methods=['GET', 'POST'])
 @login_required
