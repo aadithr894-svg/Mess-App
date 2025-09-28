@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-5">
-  <div class="card shadow-lg border-0 rounded-4">
+<div class="container mt-5" style="max-width: 850px;">
+
+  <!-- ─── Mess Skip Form ─── -->
+  <div class="card shadow-lg border-0 rounded-4 mb-5">
     <div class="card-header bg-primary text-white text-center rounded-top-4">
       <h3 class="mb-0">🍽️ Mess Skip Request</h3>
     </div>
@@ -52,6 +54,41 @@
       </form>
     </div>
   </div>
+
+  <!-- ─── Month-wise Skips List ─── -->
+  <h4 class="fw-bold text-center mb-4">📜 My Skips (Month-wise)</h4>
+
+  {% if sorted_months %}
+    {% for ym in sorted_months %}
+      <div class="mb-4">
+        <h5 class="fw-semibold text-primary border-bottom pb-2">
+          {{ month_name(ym) }}
+        </h5>
+
+        <div class="list-group shadow-sm">
+          {% for s in skips_by_month[ym] %}
+          <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+              <!-- Indian Date Format -->
+              <strong>{{ s.skip_date.strftime("%d-%m-%Y") }}</strong><br>
+              <small>
+                {% if s.breakfast %}🍳 Breakfast {% endif %}
+                {% if s.lunch %}🍛 Lunch {% endif %}
+                {% if s.dinner %}🍲 Dinner {% endif %}
+              </small>
+            </div>
+            <span class="badge bg-info text-dark rounded-pill">Skipped</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info text-center mt-3">
+      🙌 You haven’t applied for any mess skips yet.
+    </div>
+  {% endif %}
+
 </div>
 
 <!-- Script to enforce skip date rules -->
