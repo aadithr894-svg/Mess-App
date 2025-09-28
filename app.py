@@ -2098,6 +2098,12 @@ from flask_login import login_required, current_user
 from collections import defaultdict
 import calendar
 
+from collections import defaultdict
+import calendar
+from datetime import datetime
+from flask import render_template
+from flask_login import login_required, current_user
+
 @app.route("/user/mess_skips")
 @login_required
 def user_mess_skips():
@@ -2106,7 +2112,7 @@ def user_mess_skips():
 
     # Fetch all skips for the current user, newest first
     cur.execute("""
-        SELECT skip_date, 
+        SELECT skip_date,
                breakfast, lunch, dinner
         FROM mess_skips
         WHERE user_id = %s
@@ -2114,22 +2120,36 @@ def user_mess_skips():
     """, (current_user.id,))
     rows = cur.fetchall()
 
+    # Ensure skip_date is a Python date and store a DD-MM-YYYY string for template
+    for r in rows:
+        if isinstance(r["skip_date"], str):
+            # convert 'YYYY-MM-DD' string to date
+            r["skip_date"] = datetime.strptime(r["skip_date"], "%Y-%m-%d").date()
+        # add an extra field for Indian format
+        r["skip_date_display"] = r["skip_date"].strftime("%d-%m-%Y")
+
     # Group by Year-Month for easier display
     skips_by_month = defaultdict(list)
     for r in rows:
-        year_month = r['skip_date'].strftime("%Y-%m")
+        year_month = r["skip_date"].strftime("%Y-%m")  # e.g. "2025-09"
         skips_by_month[year_month].append(r)
 
-    cur.close(); conn.close()
+    cur.close()
+    conn.close()
 
     # Sort months descending (latest first)
     sorted_months = sorted(skips_by_month.keys(), reverse=True)
+
+    # Helper to turn "YYYY-MM" -> "Month YYYY"
+    def month_name(ym):
+        y, m = ym.split("-")
+        return f"{calendar.month_name[int(m)]} {y}"
 
     return render_template(
         "user_mess_skip.html",
         skips_by_month=skips_by_month,
         sorted_months=sorted_months,
-        month_name=lambda ym: f"{calendar.month_name[int(ym.split('-')[1])]} {ym.split('-')[0]}"
+        month_name=month_name
     )
 
 
