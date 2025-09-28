@@ -2000,15 +2000,11 @@ def reset_late_mess():
             conn.close()
         return f"❌ Error resetting late mess: {str(e)}", 500
 
-from flask import request, flash, redirect, url_for, render_template
-from flask_login import login_required, current_user
-from datetime import datetime
-from mysql.connector import Error
-
-from collections import defaultdict
-import calendar
 from flask import request, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
+from collections import defaultdict
+import calendar
+from datetime import datetime
 
 @app.route('/user/mess_skip', methods=['GET', 'POST'])
 @login_required
@@ -2037,8 +2033,8 @@ def mess_skip():
 
         return redirect(url_for('mess_skip'))
 
-    # --------- FETCH existing skips ---------
-    selected_month = request.args.get("month", "")   # e.g. 2025-09
+    # ---------- Fetch existing skips ----------
+    selected_month = request.args.get("month", "")
     conn = mysql_pool.get_connection()
     cur = conn.cursor(dictionary=True)
 
@@ -2051,18 +2047,23 @@ def mess_skip():
     if selected_month:
         query += " AND DATE_FORMAT(skip_date,'%%Y-%%m') = %s"
         params.append(selected_month)
-
     query += " ORDER BY skip_date DESC"
     cur.execute(query, params)
     rows = cur.fetchall()
 
-    # group rows month-wise
     skips_by_month = defaultdict(list)
     for r in rows:
-        ym = r["skip_date"].strftime("%Y-%m")
-        skips_by_month[ym].append(r)
+        sd = r["skip_date"]
+        # ensure Python date object
+        if isinstance(sd, str):
+            try:
+                sd = datetime.strptime(sd, "%Y-%m-%d")
+            except ValueError:
+                pass
+        r["skip_date"] = sd
+        skips_by_month[sd.strftime("%Y-%m")].append(r)
 
-    # build list of available months for the filter dropdown
+    # Available months for dropdown
     cur.execute("""
         SELECT DISTINCT DATE_FORMAT(skip_date,'%%Y-%%m')
         FROM mess_skips
