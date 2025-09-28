@@ -2000,21 +2000,24 @@ def reset_late_mess():
             conn.close()
         return f"❌ Error resetting late mess: {str(e)}", 500
 
+from flask import request, flash, redirect, url_for, render_template
+from flask_login import login_required, current_user
+from datetime import datetime
+from mysql.connector import Error
+
 from flask import request, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
-from collections import defaultdict
-import calendar
-from datetime import datetime
 
 @app.route('/user/mess_skip', methods=['GET', 'POST'])
 @login_required
 def mess_skip():
     if request.method == 'POST':
         skip_date = request.form.get('skip_date')
-        meals = [m for m in ['breakfast', 'lunch', 'dinner'] if m in request.form]
+        meals = [meal for meal in ['breakfast', 'lunch', 'dinner'] if meal in request.form]
 
         conn = mysql_pool.get_connection()
         cur = conn.cursor()
+
         try:
             for meal in meals:
                 cur.execute("""
@@ -2026,63 +2029,19 @@ def mess_skip():
             flash("✅ Mess skip updated successfully!", "success")
         except Exception as e:
             conn.rollback()
-            flash(f"Error: {e}", "danger")
+            flash(f"❌ Error: {e}", "danger")
         finally:
             cur.close()
             conn.close()
 
         return redirect(url_for('mess_skip'))
 
-    # ---------- Fetch existing skips ----------
-    selected_month = request.args.get("month", "")
-    conn = mysql_pool.get_connection()
-    cur = conn.cursor(dictionary=True)
+    # ── Flash message when simply opening the page ──
+    flash("ℹ️  View or request your mess skips here.", "info")
 
-    query = """
-        SELECT skip_date, meal_type
-        FROM mess_skips
-        WHERE user_id = %s
-    """
-    params = [current_user.id]
-    if selected_month:
-        query += " AND DATE_FORMAT(skip_date,'%%Y-%%m') = %s"
-        params.append(selected_month)
-    query += " ORDER BY skip_date DESC"
-    cur.execute(query, params)
-    rows = cur.fetchall()
+    return render_template('user_mess_skip.html')
 
-    skips_by_month = defaultdict(list)
-    for r in rows:
-        sd = r["skip_date"]
-        # ensure Python date object
-        if isinstance(sd, str):
-            try:
-                sd = datetime.strptime(sd, "%Y-%m-%d")
-            except ValueError:
-                pass
-        r["skip_date"] = sd
-        skips_by_month[sd.strftime("%Y-%m")].append(r)
 
-    # Available months for dropdown
-    cur.execute("""
-        SELECT DISTINCT DATE_FORMAT(skip_date,'%%Y-%%m')
-        FROM mess_skips
-        WHERE user_id = %s
-        ORDER BY 1 DESC
-    """, (current_user.id,))
-    available_months = [row[0] for row in cur.fetchall()]
-
-    cur.close()
-    conn.close()
-
-    return render_template(
-        "user_mess_skip.html",
-        skips_by_month=skips_by_month,
-        sorted_months=sorted(skips_by_month.keys(), reverse=True),
-        available_months=available_months,
-        selected_month=selected_month,
-        month_name=lambda ym: f"{calendar.month_name[int(ym.split('-')[1])]} {ym.split('-')[0]}"
-    )
 
 
 
