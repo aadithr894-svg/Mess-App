@@ -2033,7 +2033,26 @@ def mess_skip():
 
         return redirect(url_for('mess_skip'))
 
-    return render_template('user_mess_skip.html')
+    # ---------- NEW: fetch this user's skips ----------
+    conn = mysql_pool.get_connection()
+    cur = conn.cursor(dictionary=True)
+    skips = []
+    try:
+        cur.execute("""
+            SELECT skip_date, meal_type
+            FROM mess_skips
+            WHERE user_id = %s
+            ORDER BY skip_date DESC
+        """, (current_user.id,))
+        skips = cur.fetchall()
+    except Exception as e:
+        flash(f"Error loading your skips: {e}", "danger")
+    finally:
+        cur.close()
+        conn.close()
+
+    return render_template('user_mess_skip.html', skips=skips)
+
 
 
 
