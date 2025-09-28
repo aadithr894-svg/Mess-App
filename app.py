@@ -2092,67 +2092,6 @@ def admin_mess_skips():
 
 
 
-from flask import request, render_template
-from flask_login import login_required, current_user
-from collections import defaultdict
-import calendar
-
-@app.route("/user/mess_skips")
-@login_required
-def user_mess_skips():
-    selected_month = request.args.get("month", "")
-
-    conn = mysql_pool.get_connection()
-    cur = conn.cursor(dictionary=True)
-
-    # If a specific month is selected filter it, else show all
-    query = """
-        SELECT skip_date, breakfast, lunch, dinner, meal_type
-        FROM mess_skips
-        WHERE user_id = %s
-    """
-    params = [current_user.id]
-    if selected_month:
-        query += " AND DATE_FORMAT(skip_date,'%%Y-%%m') = %s"
-        params.append(selected_month)
-
-    query += " ORDER BY skip_date DESC"
-    cur.execute(query, params)
-    rows = cur.fetchall()
-
-    # Group rows by YYYY-MM
-    skips_by_month = defaultdict(list)
-    for r in rows:
-        ym = r["skip_date"].strftime("%Y-%m")
-        skips_by_month[ym].append(r)
-
-    cur.close(); conn.close()
-
-    # Build month list for the filter dropdown
-    conn = mysql_pool.get_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT DISTINCT DATE_FORMAT(skip_date,'%%Y-%%m')
-        FROM mess_skips
-        WHERE user_id = %s
-        ORDER BY 1 DESC
-    """, (current_user.id,))
-    available_months = [row[0] for row in cur.fetchall()]
-    cur.close(); conn.close()
-
-    sorted_months = sorted(skips_by_month.keys(), reverse=True)
-
-    return render_template(
-        "user_mess_skip.html",
-        skips_by_month=skips_by_month,
-        sorted_months=sorted_months,
-        available_months=available_months,
-        selected_month=selected_month,
-        month_name=lambda ym: f"{calendar.month_name[int(ym.split('-')[1])]} {ym.split('-')[0]}"
-    )
-
-
-
 from flask import jsonify, request, render_template
 import MySQLdb.cursors
 

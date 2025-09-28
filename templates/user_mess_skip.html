@@ -1,21 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-5" style="max-width: 850px;">
-
-  <!-- ─── Mess Skip Form ─── -->
-  <div class="card shadow-lg border-0 rounded-4 mb-5">
+<div class="container mt-5">
+  <div class="card shadow-lg border-0 rounded-4">
     <div class="card-header bg-primary text-white text-center rounded-top-4">
       <h3 class="mb-0">🍽️ Mess Skip Request</h3>
     </div>
     <div class="card-body p-4">
       <form method="POST">
+        
         <!-- Date Picker -->
         <div class="mb-4">
           <label for="skip_date" class="form-label fw-bold">📅 Select Date:</label>
-          <input type="date"
-                 name="skip_date"
+          <input type="date" 
+                 name="skip_date" 
                  id="skip_date"
-                 required
+                 required 
                  class="form-control form-control-lg rounded-3 shadow-sm"
                  onkeydown="return false;">
         </div>
@@ -24,18 +23,22 @@
         <div class="mb-4">
           <label class="form-label fw-bold">🥗 Meals to Skip:</label>
           <div class="d-flex flex-wrap gap-4 mt-2">
+
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" name="breakfast" id="breakfast">
               <label class="form-check-label" for="breakfast">🍳 Breakfast</label>
             </div>
+
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" name="lunch" id="lunch">
               <label class="form-check-label" for="lunch">🍛 Lunch</label>
             </div>
+
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" name="dinner" id="dinner">
               <label class="form-check-label" for="dinner">🍲 Dinner</label>
             </div>
+
           </div>
         </div>
 
@@ -45,80 +48,40 @@
             ✅ Save Skip
           </button>
         </div>
+
       </form>
     </div>
   </div>
-
-  <!-- ─── Month Filter Dropdown ─── -->
-  {% if available_months %}
-  <form method="get" class="mb-4 text-center">
-    <label for="month" class="form-label fw-bold me-2">Filter by Month:</label>
-    <select name="month" id="month"
-            class="form-select d-inline-block w-auto"
-            onchange="this.form.submit()">
-      <option value="">All Months</option>
-      {% for m in available_months %}
-        <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
-          {{ month_name(m) }}
-        </option>
-      {% endfor %}
-    </select>
-    <noscript>
-      <button type="submit" class="btn btn-primary ms-2">Filter</button>
-    </noscript>
-  </form>
-  {% endif %}
-
-  <!-- ─── Month-wise Skips List ─── -->
-  <h4 class="fw-bold text-center mb-4">📜 My Skips</h4>
-
-  {% if sorted_months %}
-    {% for ym in sorted_months %}
-      <div class="mb-4">
-        <h5 class="fw-semibold text-primary border-bottom pb-2">
-          {{ month_name(ym) }}
-        </h5>
-        <div class="list-group shadow-sm">
-          {% for s in skips_by_month[ym] %}
-          <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
-            <div>
-              <!-- raw DB date -->
-              <strong>{{ s.skip_date }}</strong><br>
-              <small>
-                {% if s.breakfast %}🍳 Breakfast {% endif %}
-                {% if s.lunch %}🍛 Lunch {% endif %}
-                {% if s.dinner %}🍲 Dinner {% endif %}
-                {% if s.meal_type %}🍽️ {{ s.meal_type|capitalize }}{% endif %}
-              </small>
-            </div>
-            <span class="badge bg-info text-dark rounded-pill">Skipped</span>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    {% endfor %}
-  {% else %}
-    <div class="alert alert-info text-center mt-3">
-      🙌 No mess skips for this selection.
-    </div>
-  {% endif %}
-
 </div>
 
-<!-- ─── Date Picker Rules ─── -->
+<!-- Script to enforce skip date rules -->
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  const dateInput = document.getElementById("skip_date");
-  const now = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const dayAfterTomorrow = new Date();
-  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-  const minDate = (now.getHours() < 22)
-      ? tomorrow.toISOString().split("T")[0]
-      : dayAfterTomorrow.toISOString().split("T")[0];
-  dateInput.setAttribute("min", minDate);
-  dateInput.addEventListener("keydown", e => e.preventDefault());
-});
+  document.addEventListener("DOMContentLoaded", function() {
+    const dateInput = document.getElementById("skip_date");
+    const now = new Date();
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const dayAfterTomorrow = new Date();
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+
+    let minDate;
+
+    if (now.getHours() < 22) {
+      // Before 10 PM → tomorrow and beyond
+      minDate = tomorrow.toISOString().split("T")[0];
+    } else {
+      // After 10 PM → day after tomorrow and beyond
+      minDate = dayAfterTomorrow.toISOString().split("T")[0];
+    }
+
+    dateInput.setAttribute("min", minDate);
+
+    // Prevent typing
+    dateInput.addEventListener("keydown", function(e) {
+      e.preventDefault();
+    });
+  });
 </script>
 {% endblock %}
