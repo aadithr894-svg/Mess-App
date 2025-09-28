@@ -2110,6 +2110,9 @@ import calendar
 from collections import defaultdict
 import calendar
 
+from collections import defaultdict
+import calendar
+
 @app.route("/user/mess_skips")
 @login_required
 def user_mess_skips():
@@ -2124,23 +2127,22 @@ def user_mess_skips():
     """, (current_user.id,))
     rows = cur.fetchall()
 
-    # ✅ Add a display-friendly date string (DD-MM-YYYY)
+    # Add a formatted date string for the template
     for r in rows:
         if r["skip_date"]:
             r["skip_date_display"] = r["skip_date"].strftime("%d-%m-%Y")
         else:
             r["skip_date_display"] = ""
 
-    # ✅ Group by Year-Month for template
     skips_by_month = defaultdict(list)
     for r in rows:
-        year_month = r["skip_date"].strftime("%Y-%m")
-        skips_by_month[year_month].append(r)
-
-    cur.close()
-    conn.close()
+        if r["skip_date"]:
+            ym = r["skip_date"].strftime("%Y-%m")
+            skips_by_month[ym].append(r)
 
     sorted_months = sorted(skips_by_month.keys(), reverse=True)
+
+    cur.close(); conn.close()
 
     return render_template(
         "user_mess_skip.html",
