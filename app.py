@@ -2005,6 +2005,10 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from mysql.connector import Error
 
+from datetime import datetime
+from flask import render_template, request, redirect, url_for, flash
+from flask_login import login_required, current_user
+
 @app.route('/user/mess_skip', methods=['GET', 'POST'])
 @login_required
 def mess_skip():
@@ -2032,6 +2036,28 @@ def mess_skip():
             conn.close()
 
         return redirect(url_for('mess_skip'))
+
+    # ➜ Fetch all skips for the logged-in user and convert to Indian date format
+    conn = mysql_pool.get_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("""
+        SELECT skip_date, meal_type
+        FROM mess_skips
+        WHERE user_id = %s
+        ORDER BY skip_date DESC
+    """, (current_user.id,))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    # Format each skip_date as DD-MM-YYYY
+    for r in rows:
+        if r['skip_date']:
+            r['skip_date'] = r['skip_date'].strftime("%d-%m-%Y")
+
+    # Pass `rows` to template as `skips`
+    return render_template('user_mess_skip.html', skips=rows)
+
 
     # ---------- NEW: fetch this user's skips ----------
     conn = mysql_pool.get_connection()
