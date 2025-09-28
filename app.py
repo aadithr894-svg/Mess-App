@@ -2107,18 +2107,13 @@ from flask_login import login_required, current_user
 from collections import defaultdict
 import calendar
 
-from collections import defaultdict
-import calendar
-
-from collections import defaultdict
-import calendar
-
-@app.route("/user/mess_skips")
+@app.route("/user/mess_skips", methods=["GET"])
 @login_required
 def user_mess_skips():
     conn = mysql_pool.get_connection()
     cur = conn.cursor(dictionary=True)
 
+    # Fetch all skips for the current user, newest first
     cur.execute("""
         SELECT skip_date, breakfast, lunch, dinner
         FROM mess_skips
@@ -2126,23 +2121,21 @@ def user_mess_skips():
         ORDER BY skip_date DESC
     """, (current_user.id,))
     rows = cur.fetchall()
+    cur.close()
+    conn.close()
 
-    # Add a formatted date string for the template
+    # ✅ Add a pre-formatted Indian date string for each record
     for r in rows:
-        if r["skip_date"]:
-            r["skip_date_display"] = r["skip_date"].strftime("%d-%m-%Y")
-        else:
-            r["skip_date_display"] = ""
+        r["skip_date_display"] = r["skip_date"].strftime("%d-%m-%Y")
 
+    # Group by Year-Month
     skips_by_month = defaultdict(list)
     for r in rows:
-        if r["skip_date"]:
-            ym = r["skip_date"].strftime("%Y-%m")
-            skips_by_month[ym].append(r)
+        year_month = r["skip_date"].strftime("%Y-%m")
+        skips_by_month[year_month].append(r)
 
+    # Sort months latest first
     sorted_months = sorted(skips_by_month.keys(), reverse=True)
-
-    cur.close(); conn.close()
 
     return render_template(
         "user_mess_skip.html",
