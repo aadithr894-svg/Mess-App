@@ -2005,9 +2005,6 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from mysql.connector import Error
 
-from flask import request, render_template, redirect, url_for, flash
-from flask_login import login_required, current_user
-
 @app.route('/user/mess_skip', methods=['GET', 'POST'])
 @login_required
 def mess_skip():
@@ -2023,24 +2020,20 @@ def mess_skip():
                 cur.execute("""
                     INSERT INTO mess_skips (user_id, skip_date, meal_type)
                     VALUES (%s, %s, %s)
-                    ON DUPLICATE KEY UPDATE user_id = user_id
+                    ON DUPLICATE KEY UPDATE user_id=user_id
                 """, (current_user.id, skip_date, meal))
             conn.commit()
             flash("✅ Mess skip updated successfully!", "success")
         except Exception as e:
             conn.rollback()
-            flash(f"❌ Error: {e}", "danger")
+            flash(f"Error: {str(e)}", "danger")
         finally:
             cur.close()
             conn.close()
 
         return redirect(url_for('mess_skip'))
 
-    # ── Flash message when simply opening the page ──
-    flash("ℹ️  View or request your mess skips here.", "info")
-
     return render_template('user_mess_skip.html')
-
 
 
 
