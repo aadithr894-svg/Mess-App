@@ -49,33 +49,14 @@
     </div>
   </div>
 
-  <!-- ─── Month Filter ─── -->
-  {% if available_months %}
-  <form method="get" class="mb-4 text-center">
-    <label for="month" class="form-label fw-bold me-2">Filter by Month:</label>
-    <select name="month" id="month"
-            class="form-select d-inline-block w-auto"
-            onchange="this.form.submit()">
-      <option value="">All Months</option>
-      {% for m in available_months %}
-        <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
-          {{ month_name(m) }}
-        </option>
-      {% endfor %}
-    </select>
-    <noscript><button type="submit" class="btn btn-primary ms-2">Filter</button></noscript>
-  </form>
-  {% endif %}
-
-  <!-- ─── Skips List ─── -->
+  <!-- ─── User's Previous Skips ─── -->
   <h4 class="fw-bold text-center mb-4">📜 My Mess Skips</h4>
   {% if skips %}
     <ul class="list-group shadow-sm">
       {% for s in skips %}
         <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
           <div>
-            <!-- Indian date format passed from backend -->
-            <strong>{{ s.skip_date_display }}</strong><br>
+            <strong>{{ s.skip_date }}</strong><br>
             <small>🍽️ {{ s.meal_type|capitalize }}</small>
           </div>
           <span class="badge bg-info text-dark rounded-pill">Skipped</span>
@@ -84,13 +65,13 @@
     </ul>
   {% else %}
     <div class="alert alert-info text-center">
-      🙌 No mess skips for this selection.
+      🙌 You haven’t applied for any mess skips yet.
     </div>
   {% endif %}
 
 </div>
 
-<!-- Date restrictions for new skip -->
+<!-- Script to enforce skip date rules -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const dateInput = document.getElementById("skip_date");
