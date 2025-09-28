@@ -2000,17 +2000,13 @@ def reset_late_mess():
             conn.close()
         return f"❌ Error resetting late mess: {str(e)}", 500
 
-from flask import request, flash, redirect, url_for, render_template
-from flask_login import login_required, current_user
-from datetime import datetime
-from mysql.connector import Error
-
 @app.route('/user/mess_skip', methods=['GET', 'POST'])
 @login_required
 def mess_skip():
     if request.method == 'POST':
         skip_date = request.form.get('skip_date')
         meals = [m for m in ['breakfast', 'lunch', 'dinner'] if m in request.form]
+
         conn = mysql_pool.get_connection()
         cur = conn.cursor()
         try:
@@ -2018,37 +2014,40 @@ def mess_skip():
                 cur.execute("""
                     INSERT INTO mess_skips (user_id, skip_date, meal_type)
                     VALUES (%s, %s, %s)
-                    ON DUPLICATE KEY UPDATE user_id=user_id
+                    ON DUPLICATE KEY UPDATE user_id = user_id
                 """, (current_user.id, skip_date, meal))
             conn.commit()
             flash("✅ Mess skip saved!", "success")
+        except Exception as e:
+            conn.rollback()
+            flash(f"Database error: {e}", "danger")
         finally:
             cur.close(); conn.close()
+
         return redirect(url_for('mess_skip'))
 
-    # --- Filter & Fetch
+    # ---------- GET: show skips ----------
     month = request.args.get("month", "")
     conn = mysql_pool.get_connection()
     cur = conn.cursor(dictionary=True)
 
-    base_query = """SELECT skip_date, meal_type
-                    FROM mess_skips
-                    WHERE user_id=%s"""
+    query = "SELECT skip_date, meal_type FROM mess_skips WHERE user_id=%s"
     params = [current_user.id]
-
     if month:
-        base_query += " AND DATE_FORMAT(skip_date,'%%Y-%%m')=%s"
+        query += " AND DATE_FORMAT(skip_date,'%%Y-%%m')=%s"
         params.append(month)
+    query += " ORDER BY skip_date DESC"
 
-    base_query += " ORDER BY skip_date DESC"
-    cur.execute(base_query, params)
+    cur.execute(query, params)
     rows = cur.fetchall()
 
-    # Format for Indian date
+    # Safely format dates
     for r in rows:
-        r["skip_date_display"] = r["skip_date"].strftime("%d-%m-%Y")
+        if r["skip_date"]:
+            r["skip_date_display"] = r["skip_date"].strftime("%d-%m-%Y")
+        else:
+            r["skip_date_display"] = "—"
 
-    # Month list for dropdown
     cur.execute("""SELECT DISTINCT DATE_FORMAT(skip_date,'%%Y-%%m')
                    FROM mess_skips
                    WHERE user_id=%s
@@ -2063,8 +2062,6 @@ def mess_skip():
         selected_month=month,
         month_name=lambda ym: f"{calendar.month_name[int(ym.split('-')[1])]} {ym.split('-')[0]}"
     )
-
-
 
 
 
