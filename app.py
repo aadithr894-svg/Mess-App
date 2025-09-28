@@ -2092,31 +2092,24 @@ def admin_mess_skips():
 
 
 
-
-from flask import render_template
+from flask import render_template, request
 from flask_login import login_required, current_user
-from collections import defaultdict
-import calendar
-
-from collections import defaultdict
-import calendar
-from datetime import datetime
-from flask import render_template
-from flask_login import login_required, current_user
-
 from collections import defaultdict
 import calendar
 
 @app.route("/user/mess_skips")
 @login_required
 def user_mess_skips():
-    # Read selected month like "2025-10"
-    selected_month = request.args.get("month", "")
+    """
+    Show a user's mess-skip records, with optional month filtering.
+    Querystring param ?month=YYYY-MM filters records for that month.
+    """
+    selected_month = request.args.get("month", "")  # e.g. "2025-10"
 
     conn = mysql_pool.get_connection()
     cur = conn.cursor(dictionary=True)
 
-    # Base query
+    # Build base query + optional month filter
     query = """
         SELECT skip_date, breakfast, lunch, dinner
         FROM mess_skips
@@ -2124,7 +2117,6 @@ def user_mess_skips():
     """
     params = [current_user.id]
 
-    # Optional month filter
     if selected_month:
         query += " AND DATE_FORMAT(skip_date, '%%Y-%%m') = %s"
         params.append(selected_month)
@@ -2133,27 +2125,23 @@ def user_mess_skips():
     cur.execute(query, params)
     rows = cur.fetchall()
 
-    # Format rows for Indian date display
+    # Group results by year-month and add a display-friendly date
     skips_by_month = defaultdict(list)
     for r in rows:
-        # ensure skip_date is a datetime.date
+        # Add a string like "28-09-2025" for direct template use
         r["skip_date_display"] = r["skip_date"].strftime("%d-%m-%Y")
         ym = r["skip_date"].strftime("%Y-%m")
         skips_by_month[ym].append(r)
 
-    cur.close()
-    conn.close()
-
-    # Build list of months available for filter
-    conn = mysql_pool.get_connection()
-    cur = conn.cursor()
+    # Fetch all available months for the dropdown
     cur.execute("""
-        SELECT DISTINCT DATE_FORMAT(skip_date,'%%Y-%%m')
+        SELECT DISTINCT DATE_FORMAT(skip_date,'%%Y-%%m') AS ym
         FROM mess_skips
-        WHERE user_id=%s
-        ORDER BY 1 DESC
+        WHERE user_id = %s
+        ORDER BY ym DESC
     """, (current_user.id,))
-    available_months = [row[0] for row in cur.fetchall()]
+    available_months = [row["ym"] for row in cur.fetchall()]
+
     cur.close()
     conn.close()
 
@@ -2167,8 +2155,6 @@ def user_mess_skips():
         selected_month=selected_month,
         month_name=lambda ym: f"{calendar.month_name[int(ym.split('-')[1])]} {ym.split('-')[0]}"
     )
-
-
 
 
 from flask import jsonify, request, render_template
