@@ -2092,8 +2092,8 @@ def admin_mess_skips():
 
 
 
-from flask import render_template
-from flask_login import login_required, current_user
+from flask import request, render_template
+from flask_login import login_required
 from collections import defaultdict
 import calendar
 
@@ -2101,37 +2101,57 @@ import calendar
 @login_required
 def user_mess_skips():
     """
-    Show all mess skips for the logged-in user,
-    grouped by year-month. Each DB row = one meal skip.
+    Show ALL mess skips (every user) with optional month filter,
+    grouped by year–month.
     """
+    selected_month = request.args.get("month", "")   # e.g. "2025-10"
+
     conn = mysql_pool.get_connection()
     cur = conn.cursor(dictionary=True)
 
-    # Fetch every skip row for this user
-    cur.execute("""
-        SELECT skip_date, meal_type
+    # Base query
+    query = """
+        SELECT user_id, skip_date, breakfast, lunch, dinner
         FROM mess_skips
-        WHERE user_id = %s
-        ORDER BY skip_date DESC
-    """, (current_user.id,))
-    rows = cur.fetchall()
-    cur.close(); conn.close()
+    """
+    params = []
 
-    # Group by Year-Month for the template
+    # Optional month filter like 2025-10
+    if selected_month:
+        query += " WHERE DATE_FORMAT(skip_date,'%%Y-%%m') = %s"
+        params.append(selected_month)
+
+    query += " ORDER BY skip_date DESC"
+    cur.execute(query, params)
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    # Group by Year-Month
     skips_by_month = defaultdict(list)
     for r in rows:
-        # Pre-format date as dd-mm-YYYY for direct display
-        r["skip_date_display"] = r["skip_date"].strftime("%d-%m-%Y")
+        r["skip_date_display"] = r["skip_date"].strftime("%Y-%m-%d")
         ym = r["skip_date"].strftime("%Y-%m")
         skips_by_month[ym].append(r)
 
-    # Sort months descending
-    sorted_months = sorted(skips_by_month.keys(), reverse=True)
+    # Build dropdown of distinct months
+    conn = mysql_pool.get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT DISTINCT DATE_FORMAT(skip_date,'%%Y-%%m')
+        FROM mess_skips
+        ORDER BY 1 DESC
+    """)
+    available_months = [row[0] for row in cur.fetchall()]
+    cur.close()
+    conn.close()
 
     return render_template(
         "user_mess_skip.html",
         skips_by_month=skips_by_month,
-        sorted_months=sorted_months,
+        sorted_months=sorted(skips_by_month.keys(), reverse=True),
+        available_months=available_months,
+        selected_month=selected_month,
         month_name=lambda ym: f"{calendar.month_name[int(ym.split('-')[1])]} {ym.split('-')[0]}"
     )
 

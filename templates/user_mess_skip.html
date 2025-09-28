@@ -63,7 +63,9 @@
         </option>
       {% endfor %}
     </select>
-    <noscript><button type="submit" class="btn btn-primary ms-2">Filter</button></noscript>
+    <noscript>
+      <button type="submit" class="btn btn-primary ms-2">Filter</button>
+    </noscript>
   </form>
   {% endif %}
 
@@ -80,6 +82,7 @@
           {% for s in skips_by_month[ym] %}
           <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
             <div>
+              <!-- raw DB date -->
               <strong>{{ s.skip_date }}</strong><br>
               <small>
                 {% if s.breakfast %}🍳 Breakfast {% endif %}
