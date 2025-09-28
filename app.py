@@ -2010,11 +2010,9 @@ from mysql.connector import Error
 def mess_skip():
     if request.method == 'POST':
         skip_date = request.form.get('skip_date')
-        meals = [meal for meal in ['breakfast', 'lunch', 'dinner'] if meal in request.form]
-
+        meals = [m for m in ['breakfast', 'lunch', 'dinner'] if m in request.form]
         conn = mysql_pool.get_connection()
         cur = conn.cursor()
-
         try:
             for meal in meals:
                 cur.execute("""
@@ -2023,35 +2021,48 @@ def mess_skip():
                     ON DUPLICATE KEY UPDATE user_id=user_id
                 """, (current_user.id, skip_date, meal))
             conn.commit()
-            flash("✅ Mess skip updated successfully!", "success")
-        except Exception as e:
-            conn.rollback()
-            flash(f"Error: {str(e)}", "danger")
+            flash("✅ Mess skip saved!", "success")
         finally:
-            cur.close()
-            conn.close()
-
+            cur.close(); conn.close()
         return redirect(url_for('mess_skip'))
 
-    # ---------- NEW: fetch this user's skips ----------
+    # --- Filter & Fetch
+    month = request.args.get("month", "")
     conn = mysql_pool.get_connection()
     cur = conn.cursor(dictionary=True)
-    skips = []
-    try:
-        cur.execute("""
-            SELECT skip_date, meal_type
-            FROM mess_skips
-            WHERE user_id = %s
-            ORDER BY skip_date DESC
-        """, (current_user.id,))
-        skips = cur.fetchall()
-    except Exception as e:
-        flash(f"Error loading your skips: {e}", "danger")
-    finally:
-        cur.close()
-        conn.close()
 
-    return render_template('user_mess_skip.html', skips=skips)
+    base_query = """SELECT skip_date, meal_type
+                    FROM mess_skips
+                    WHERE user_id=%s"""
+    params = [current_user.id]
+
+    if month:
+        base_query += " AND DATE_FORMAT(skip_date,'%%Y-%%m')=%s"
+        params.append(month)
+
+    base_query += " ORDER BY skip_date DESC"
+    cur.execute(base_query, params)
+    rows = cur.fetchall()
+
+    # Format for Indian date
+    for r in rows:
+        r["skip_date_display"] = r["skip_date"].strftime("%d-%m-%Y")
+
+    # Month list for dropdown
+    cur.execute("""SELECT DISTINCT DATE_FORMAT(skip_date,'%%Y-%%m')
+                   FROM mess_skips
+                   WHERE user_id=%s
+                   ORDER BY 1 DESC""", (current_user.id,))
+    available_months = [row[0] for row in cur.fetchall()]
+    cur.close(); conn.close()
+
+    return render_template(
+        "user_mess_skip.html",
+        skips=rows,
+        available_months=available_months,
+        selected_month=month,
+        month_name=lambda ym: f"{calendar.month_name[int(ym.split('-')[1])]} {ym.split('-')[0]}"
+    )
 
 
 
