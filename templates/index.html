@@ -3,35 +3,31 @@
 <div class="text-center py-5" style="font-family: 'Roboto', sans-serif;">
 
     <h1 class="fw-bold mb-3"
-        style="color:#5D6D7E; font-size:2.4rem; font-family: 'Playfair Display', serif;">
-        Welcome to <span style="color:#C39BD3;">Anaswara Mess</span> </h1>
-    <p class="mb-5 text-muted" style="font-size:1.1rem; color:#85929E !important;">
+        style="color: var(--text-color); font-size:2.4rem; font-family: 'Playfair Display', serif;">
+        Welcome to <span style="color: var(--secondary);">Anaswara Mess</span> 🍵</h1>
+    <p class="mb-5 text-muted" style="font-size:1.1rem; color: var(--sidebar-text) !important;">
         Manage your meal plans, request late services, and access your account details easily.
     </p>
 
     <div class="d-flex justify-content-center flex-wrap gap-4">
 
         <a href="{{ url_for('apply_mess_cut') }}"
-           class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center action-card"
-           style="background: linear-gradient(135deg, #FADDE3, #F2A9C3); color: #884A5C !important;">
+           class="shadow-sm fw-semibold text-decoration-none d-flex flex-column justify-content-center align-items-center action-card action-cut">
            <i class="fas fa-cut mb-2" style="font-size: 1.5rem;"></i> Apply Mess Cut
         </a>
 
         <a href="{{ url_for('request_late_mess') }}"
-           class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center action-card"
-           style="background: linear-gradient(135deg, #C2E0E8, #9FD2E4); color: #4B6C76 !important;">
-           <i class="fas fa-utensils mb-2" style="font-size: 1.5rem;"></i> Request Late Mess
+           class="shadow-sm fw-semibold text-decoration-none d-flex flex-column justify-content-center align-items-center action-card action-late">
+           <i class="fas fa-clock mb-2" style="font-size: 1.5rem;"></i> Request Late Mess
         </a>
 
         <a href="{{ url_for('my_qr') }}"
-           class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center action-card"
-           style="background: linear-gradient(135deg, #FDF7E5, #FAD6A5); color: #9C7948 !important;">
+           class="shadow-sm fw-semibold text-decoration-none d-flex flex-column justify-content-center align-items-center action-card action-qr">
            <i class="fas fa-qrcode mb-2" style="font-size: 1.5rem;"></i> View My QR
         </a>
         
         <a href="{{ url_for('user_bills') }}"
-           class="shadow-sm fw-semibold text-white text-decoration-none d-flex flex-column justify-content-center align-items-center action-card"
-           style="background: linear-gradient(135deg, #E6E0F8, #C8B9F2); color: #6A5B9B !important;">
+           class="shadow-sm fw-semibold text-decoration-none d-flex flex-column justify-content-center align-items-center action-card action-bill">
            <i class="fas fa-receipt mb-2" style="font-size: 1.5rem;"></i> View My Bill
         </a>
 
@@ -40,11 +36,15 @@
 </div>
 
 <style>
-    /* Updated action card styles for a softer, eye-relaxing feel. 
-    The card text is now dark for readability against the light pastel gradients.
+    /* Since this template extends base.html, we can use the defined CSS variables:
+    --primary: #4ECDC4 (Teal)
+    --secondary: #FF6B6B (Coral)
+    --text-color: #374151 (Dark Slate)
+    --card-bg: #FDFDFD (Soft White)
     */
-    
+
     .action-card {
+        /* Base styles */
         width: 170px;
         height: 140px;
         border-radius: 15px;
@@ -53,20 +53,62 @@
         transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         line-height: 1.3;
         font-family: 'Roboto', sans-serif;
-        /* Remove text-white and set a muted dark color for better contrast/readability on light pastels */
-        color: #5D6D7E !important; /* Muted slate for text */
-        text-shadow: none; /* Ensure text is clean */
-        font-weight: 600 !important; /* Make sure text stands out */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Lighter shadow */
+        font-weight: 600 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05); /* Soft border for definition */
     }
+
     .action-card:hover {
-        transform: translateY(-5px) scale(1.02); /* Less aggressive lift */
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1); /* Softer hover shadow */
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         text-decoration: none;
     }
+    
+    /* Themed Color Gradients for Cards */
+
+    /* Mess Cut: Soft Peach/Coral (Secondary Color) */
+    .action-cut {
+        background: linear-gradient(135deg, #FFE0E0, #FFC1C1);
+        color: #7A3F3F !important; /* Muted Red-Brown Text */
+    }
+    .action-cut:hover {
+        background: linear-gradient(135deg, #FF6B6B, #FA5B5B);
+        color: #fff !important;
+    }
+
+    /* Late Mess: Soft Teal (Primary Color) */
+    .action-late {
+        background: linear-gradient(135deg, #C2F0EE, #9BE0DD);
+        color: #3C7570 !important; /* Muted Teal Text */
+    }
+    .action-late:hover {
+        background: linear-gradient(135deg, #4ECDC4, #3CB0A7);
+        color: #fff !important;
+    }
+
+    /* My QR: Soft Yellow/Ochre */
+    .action-qr {
+        background: linear-gradient(135deg, #FFF6E0, #FBE5B2);
+        color: #8C6A3C !important; /* Muted Gold Text */
+    }
+    .action-qr:hover {
+        background: linear-gradient(135deg, #FAD6A5, #F7C080);
+        color: #fff !important;
+    }
+
+    /* My Bill: Soft Lavender/Purple */
+    .action-bill {
+        background: linear-gradient(135deg, #E6E0F8, #C8B9F2);
+        color: #6A5B9B !important; /* Muted Purple Text */
+    }
+    .action-bill:hover {
+        background: linear-gradient(135deg, #C8B9F2, #B3A0EB);
+        color: #fff !important;
+    }
+
     .action-card i {
-        /* Ensure icons are the same color as the text */
-        color: inherit !important; 
+        /* Icons inherit text color in the base state */
+        color: inherit !important;
     }
 </style>
 {% endblock %}
