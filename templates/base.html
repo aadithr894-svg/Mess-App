@@ -11,22 +11,22 @@
 
 <style>
 :root {
-    /* Soft, Pastel & Girly Theme (Colors maintained) */
-    --primary: #FF78B2;             /* Rose Pink (Accent) */
-    --secondary: #B980F2;           /* Soft Lavender */
-    --sidebar-bg: #FFFFFF;          /* Clean White Sidebar */
-    --sidebar-text: #6B7280;        /* Muted Gray Text */
-    --sidebar-hover: #FEE2E2;       /* Light Pink Hover */
-    --content-bg: #F9FAFB;          /* Very Light Page BG */
-    --card-bg: #FFFFFF;             /* White Cards */
-    --text-color: #374151;          /* Darker text for readability */
+    /* NEW Theme: Muted Teal & Soft Peach/Coral */
+    --primary: #4ECDC4;             /* Soft Teal (Accent) */
+    --secondary: #FF6B6B;           /* Muted Coral/Peach */
+    --sidebar-bg: #FFFFFF;           /* Clean White Sidebar */
+    --sidebar-text: #6B7280;         /* Muted Gray Text */
+    --sidebar-hover: #E8F8F7;        /* Very Light Teal Hover */
+    --content-bg: #F9FAFB;           /* Very Light Page BG */
+    --card-bg: #FFFFFF;              /* White Cards */
+    --text-color: #374151;           /* Darker text for readability */
     --radius: 12px;
     --shadow: 0 4px 12px rgba(0,0,0,0.06);
     --transition: 0.3s ease-in-out;
 }
 
 body {
-    font-family: 'Roboto', sans-serif; /* Changed body font */
+    font-family: 'Roboto', sans-serif;
     background: var(--content-bg);
     margin: 0;
     color: var(--text-color);
@@ -37,7 +37,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* Soft Gradient from Pink to Lavender */
+    /* Soft Gradient from Teal to Coral */
     background: linear-gradient(90deg, var(--primary), var(--secondary));
     color: #fff;
     padding: 1rem;
@@ -54,7 +54,7 @@ body {
 }
 .topbar h1 {
     font-weight: 700;
-    font-family: 'Playfair Display', serif; /* Changed header font */
+    font-family: 'Playfair Display', serif;
 }
 
 /* ─── Sidebar (Mobile Menu) ─── */
@@ -83,14 +83,14 @@ body {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    border: 4px solid var(--primary);
+    border: 4px solid var(--primary); /* Teal Border */
     object-fit: cover;
     box-shadow: var(--shadow);
 }
 .sidebar .logo h2 {
-    color: var(--secondary);
+    color: var(--secondary); /* Coral Text */
     font-weight: 700;
-    font-family: 'Playfair Display', serif; /* Changed logo heading font */
+    font-family: 'Playfair Display', serif;
     margin-top: 0.5rem;
 }
 
@@ -103,7 +103,7 @@ body {
     color: var(--sidebar-text);
     text-decoration: none;
     font-weight: 500;
-    font-family: 'Roboto', sans-serif; /* Menu item font */
+    font-family: 'Roboto', sans-serif;
     border-radius: var(--radius);
     transition: background var(--transition), color var(--transition), transform var(--transition);
 }
@@ -113,8 +113,8 @@ body {
 .sidebar nav a:hover,
 .sidebar nav a.active {
     background: var(--sidebar-hover);
-    color: var(--primary);
-    font-weight: 700; /* Bold on active/hover */
+    color: var(--primary); /* Teal Accent */
+    font-weight: 700;
     transform: none;
 }
 .sidebar nav a.active {
@@ -130,14 +130,14 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--secondary);
+    color: var(--secondary); /* Coral Color */
     text-decoration: none;
     font-weight: 600;
     padding: 0.75rem 1.5rem;
     border-radius: var(--radius);
 }
 .sidebar .logout a:hover {
-    color: var(--primary);
+    color: var(--primary); /* Teal Hover */
     background: var(--sidebar-hover);
 }
 
@@ -171,7 +171,7 @@ body {
     border: none;
 }
 .badge.bg-danger {
-    background-color: var(--primary) !important;
+    background-color: var(--secondary) !important; /* Changed badge color to Coral */
     font-size: 0.75rem;
     font-family: 'Roboto', sans-serif;
 }
