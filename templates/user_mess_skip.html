@@ -1,97 +1,170 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-5" style="max-width: 850px;">
 
-  <!-- ─── Mess Skip Request Form ─── -->
-  <div class="card shadow-lg border-0 rounded-4 mb-5">
-    <div class="card-header bg-primary text-white text-center rounded-top-4">
-      <h3 class="mb-0">🍽️ Mess Skip Request</h3>
-    </div>
-    <div class="card-body p-4">
-      <form method="POST">
-        <!-- Date Picker -->
-        <div class="mb-4">
-          <label for="skip_date" class="form-label fw-bold">📅 Select Date:</label>
-          <input type="date"
-                 name="skip_date"
-                 id="skip_date"
-                 required
-                 class="form-control form-control-lg rounded-3 shadow-sm"
-                 onkeydown="return false;">
+<div class="container my-4" style="max-width: 700px; font-family: 'Roboto', sans-serif;">
+
+    <div class="card shadow-lg border-0 rounded-4 mb-5 theme-card">
+        <div class="card-header text-center rounded-top-4 theme-card-header">
+            <h3 class="mb-0 fw-bold" style="font-family: 'Playfair Display', serif; color: var(--text-color);">
+                ✨ Apply Mess Cut
+            </h3>
         </div>
+        <div class="card-body p-4 p-md-5">
+            <form method="POST">
+                <div class="mb-4">
+                    <label for="skip_date" class="form-label fw-bold" style="color: var(--secondary);">
+                        📅 Date of Skip:
+                    </label>
+                    <input type="date"
+                           name="skip_date"
+                           id="skip_date"
+                           required
+                           class="form-control form-control-lg rounded-3 shadow-sm theme-input"
+                           onkeydown="return false;">
+                    <small class="form-text text-muted">
+                        *Skips must be requested at least one day in advance (before 10 PM).
+                    </small>
+                </div>
 
-        <!-- Meal Checkboxes -->
-        <div class="mb-4">
-          <label class="form-label fw-bold">🥗 Meals to Skip:</label>
-          <div class="d-flex flex-wrap gap-4 mt-2">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="breakfast" id="breakfast">
-              <label class="form-check-label" for="breakfast">🍳 Breakfast</label>
-            </div>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="lunch" id="lunch">
-              <label class="form-check-label" for="lunch">🍛 Lunch</label>
-            </div>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="dinner" id="dinner">
-              <label class="form-check-label" for="dinner">🍲 Dinner</label>
-            </div>
-            <!-- ✅ New Snacks Option -->
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="snacks" id="snacks">
-              <label class="form-check-label" for="snacks">🍪 Snacks</label>
-            </div>
-          </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold" style="color: var(--secondary);">
+                        🍽️ Meals to Cut:
+                    </label>
+                    <div class="d-flex flex-wrap justify-content-center justify-content-md-start gap-4 mt-2">
+                        {% for meal, emoji in [('breakfast', '🍳'), ('lunch', '🍛'), ('dinner', '🍲'), ('snacks', '☕')] %}
+                        <div class="form-check form-switch form-check-lg">
+                            <input class="form-check-input theme-switch" type="checkbox" name="{{ meal }}" id="{{ meal }}">
+                            <label class="form-check-label fw-medium" for="{{ meal }}">
+                                {{ emoji }} {{ meal|capitalize }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-lg w-75 rounded-pill shadow-lg theme-submit-btn">
+                        <i class="fas fa-cut me-2"></i> Confirm Skip
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <!-- Submit -->
-        <div class="text-center">
-          <button type="submit" class="btn btn-lg btn-success px-5 shadow-sm">
-            ✅ Save Skip
-          </button>
+    <h4 class="fw-bold text-center mb-4" style="color: var(--primary);">
+        💖 My Recent Mess Cuts
+    </h4>
+    {% if skips %}
+        <ul class="list-group shadow-sm rounded-3">
+            {% for s in skips %}
+                <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap theme-list-item">
+                    <div class="py-1">
+                        <strong style="color: var(--text-color);">{{ s.skip_date }}</strong><br>
+                        <small class="text-muted">
+                            <i class="fas fa-utensils me-1" style="color: var(--secondary);"></i> {{ s.meal_type|capitalize }}
+                        </small>
+                    </div>
+                    <span class="badge rounded-pill fw-medium" style="background-color: #A4E8CC; color: #38761D;">
+                        CUT APPLIED
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="alert text-center rounded-3" style="background-color: #E2F0F7; color: #0C5460;">
+            💖 You haven’t applied for any mess cuts yet. Ready to save?
         </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ─── User's Previous Skips ─── -->
-  <h4 class="fw-bold text-center mb-4">📜 My Mess Skips</h4>
-  {% if skips %}
-    <ul class="list-group shadow-sm">
-      {% for s in skips %}
-        <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
-          <div>
-            <strong>{{ s.skip_date }}</strong><br>
-            <small>🍽️ {{ s.meal_type|capitalize }}</small>
-          </div>
-          <span class="badge bg-info text-dark rounded-pill">Skipped</span>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <div class="alert alert-info text-center">
-      🙌 You haven’t applied for any mess skips yet.
-    </div>
-  {% endif %}
+    {% endif %}
 
 </div>
 
-<!-- Script to enforce skip date rules -->
+<style>
+/* Card and Header */
+.theme-card {
+    border: 1px solid #FEE2E2 !important; /* Soft border */
+}
+.theme-card-header {
+    background-color: var(--sidebar-hover) !important; /* Light Pink Header */
+    padding: 1.25rem 1.5rem;
+}
+
+/* Form Inputs */
+.theme-input {
+    border-color: #FEE2E2;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+.theme-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(255, 120, 178, 0.25); /* Rose Pink focus ring */
+}
+
+/* Custom Switch for Checkboxes */
+.form-check-lg {
+    min-height: 1.5rem; /* Make the whole area bigger for mobile tap target */
+}
+.theme-switch {
+    width: 2.5em; /* Wider switch */
+    height: 1.5em;
+    cursor: pointer;
+    background-color: #FDE2F3; /* Off state color */
+    border-color: #FADDE3;
+}
+.theme-switch:checked {
+    background-color: var(--primary); /* Rose Pink on state */
+    border-color: var(--primary);
+}
+.theme-switch:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255, 120, 178, 0.25);
+}
+
+/* Submit Button */
+.theme-submit-btn {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.3s;
+}
+.theme-submit-btn:hover {
+    background-color: #E85E9A; /* Slightly darker pink */
+    border-color: #E85E9A;
+    transform: translateY(-2px);
+}
+
+/* List Items */
+.theme-list-item {
+    background-color: var(--card-bg); /* White/light background */
+    border-left: 5px solid var(--primary); /* Accent line */
+    margin-bottom: 8px;
+    border-radius: 8px !important;
+}
+</style>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  const dateInput = document.getElementById("skip_date");
-  const now = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const dayAfterTomorrow = new Date();
-  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+    const dateInput = document.getElementById("skip_date");
+    const now = new Date();
+    
+    // Calculate 10 PM today (22 hours)
+    const deadlineToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 22, 0, 0);
 
-  const minDate = (now.getHours() < 22)
-      ? tomorrow.toISOString().split("T")[0]
-      : dayAfterTomorrow.toISOString().split("T")[0];
+    let minDate;
+    
+    // If current time is before 10 PM (22:00) today, the minimum skip date is tomorrow.
+    if (now < deadlineToday) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(now.getDate() + 1);
+        minDate = tomorrow;
+    } 
+    // If current time is after 10 PM (22:00) today, the minimum skip date is the day after tomorrow.
+    else {
+        const dayAfterTomorrow = new Date(now);
+        dayAfterTomorrow.setDate(now.getDate() + 2);
+        minDate = dayAfterTomorrow;
+    }
 
-  dateInput.setAttribute("min", minDate);
-  dateInput.addEventListener("keydown", e => e.preventDefault());
+    dateInput.setAttribute("min", minDate.toISOString().split("T")[0]);
+    dateInput.addEventListener("keydown", e => e.preventDefault());
 });
 </script>
 {% endblock %}
