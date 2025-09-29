@@ -14,12 +14,15 @@
     /* NEW Theme: Muted Teal & Soft Peach/Coral */
     --primary: #4ECDC4;             /* Soft Teal (Accent) */
     --secondary: #FF6B6B;           /* Muted Coral/Peach */
-    --sidebar-bg: #FFFFFF;           /* Clean White Sidebar */
-    --sidebar-text: #6B7280;         /* Muted Gray Text */
+    
+    /* MODIFIED: Softer Whites */
+    --sidebar-bg: #FDFDFD;           /* Slightly off-white sidebar */
+    --sidebar-text: #6B7280;         
     --sidebar-hover: #E8F8F7;        /* Very Light Teal Hover */
-    --content-bg: #F9FAFB;           /* Very Light Page BG */
-    --card-bg: #FFFFFF;              /* White Cards */
-    --text-color: #374151;           /* Darker text for readability */
+    --content-bg: #F5F5F7;           /* Noticeably softer background gray */
+    --card-bg: #FDFDFD;              /* Off-white Cards (Matches sidebar) */
+    
+    --text-color: #374151;           
     --radius: 12px;
     --shadow: 0 4px 12px rgba(0,0,0,0.06);
     --transition: 0.3s ease-in-out;
@@ -163,7 +166,7 @@ body {
     padding-bottom: 50px;
 }
 .card {
-    background: var(--card-bg);
+    background: var(--card-bg); /* Softened Card Background */
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 1.5rem;
@@ -171,7 +174,7 @@ body {
     border: none;
 }
 .badge.bg-danger {
-    background-color: var(--secondary) !important; /* Changed badge color to Coral */
+    background-color: var(--secondary) !important;
     font-size: 0.75rem;
     font-family: 'Roboto', sans-serif;
 }
