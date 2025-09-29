@@ -48,6 +48,7 @@ function detectMeal() {
   const hours = now.getHours() + now.getMinutes()/60;
   if (hours >= 7.5 && hours <= 11.5) return 'breakfast';
   if (hours >= 12 && hours <= 14.5) return 'lunch';
+  if (hours >= 16 && hours <= 17) return 'snacks';
   if (hours >= 19 && hours <= 23.99) return 'dinner';
   return 'Closed';
 }

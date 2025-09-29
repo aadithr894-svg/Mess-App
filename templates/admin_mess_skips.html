@@ -4,11 +4,20 @@
     <h2 class="mb-4 text-center">🍽️ Mess Skips for {{ tomorrow.strftime('%d-%m-%Y') }}</h2>
 
     <div class="row g-3 justify-content-center">
-        {% for meal in ['breakfast', 'lunch', 'dinner'] %}
-        <div class="col-12 col-md-4">
+        {# ✅ Added "snacks" to the meal list #}
+        {% for meal in ['breakfast', 'lunch', 'dinner', 'snacks'] %}
+        <div class="col-12 col-md-3">
             <div class="card shadow-sm h-100">
                 <div class="card-header text-center bg-primary text-white">
-                    <h4 class="mb-0">{{ meal.capitalize() }}</h4>
+                    <h4 class="mb-0">
+                        {# Show emoji per meal #}
+                        {% if meal == 'breakfast' %}🍳
+                        {% elif meal == 'lunch' %}🍛
+                        {% elif meal == 'dinner' %}🍲
+                        {% elif meal == 'snacks' %}🍪
+                        {% endif %}
+                        {{ meal.capitalize() }}
+                    </h4>
                 </div>
                 <div class="card-body">
                     <p class="fs-3 fw-bold text-danger text-center">{{ skip_counts[meal] }}</p>

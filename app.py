@@ -927,32 +927,39 @@ from datetime import date
 import MySQLdb.cursors
 
 # In-memory live count cache
-live_counts = {'breakfast': 0, 'lunch': 0, 'dinner': 0}
+live_counts = {'breakfast': 0, 'lunch': 0, 'dinner': 0,'snacks':0}
 
 @app.route('/admin/scan_qr', methods=['POST'])
 @login_required
 def scan_qr():
+    """
+    Admin QR scan:
+      • Accepts meal_type in ['breakfast','lunch','dinner','snacks']
+      • Rejects users on mess cut or who skipped that meal
+      • Inserts attendance and updates live count
+    """
     if not getattr(current_user, 'is_admin', False):
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
     data = request.get_json(silent=True) or request.form
-    user_id = data.get('user_id')
+    user_id   = data.get('user_id')
     meal_type = data.get('meal_type')
-    today = date.today()
+    today     = date.today()
 
-    if not user_id or meal_type not in ['breakfast', 'lunch', 'dinner']:
+    # ✅ allow snacks
+    if not user_id or meal_type not in ['breakfast', 'lunch', 'dinner', 'snacks']:
         return jsonify({'success': False, 'message': 'Invalid data'}), 400
 
-    conn = mysql_pool.get_connection()  # Get connection from pool
+    conn = mysql_pool.get_connection()
     try:
-        with conn.cursor(dictionary=True, buffered=True) as cur:  
+        with conn.cursor(dictionary=True, buffered=True) as cur:
             # 🔹 Fetch user name
             cur.execute("SELECT name FROM users WHERE id=%s", (user_id,))
             user = cur.fetchone()
             if not user:
                 return jsonify({'success': False, 'message': 'User not found'}), 404
 
-            # 🔹 Check mess cut
+            # 🔹 Check active mess cut
             cur.execute("""
                 SELECT 1 FROM mess_cut
                 WHERE user_id=%s AND start_date <= %s AND end_date >= %s
@@ -964,22 +971,23 @@ def scan_qr():
                     'name': user['name']
                 }), 403
 
-            # 🔹 Check mess skip in mess_skips table
-            cur.execute(f"""
-                SELECT {meal_type} FROM mess_skips
-                WHERE user_id=%s AND skip_date=%s
-            """, (user_id, today))
-            skip = cur.fetchone()
-            if skip and skip[meal_type] == 1:
+            # 🔹 Check mess skip for this meal
+            cur.execute("""
+                SELECT 1
+                FROM mess_skips
+                WHERE user_id=%s AND skip_date=%s AND meal_type=%s
+            """, (user_id, today, meal_type))
+            if cur.fetchone():
                 return jsonify({
                     'success': False,
                     'message': f'User has skipped {meal_type} today.',
                     'name': user['name']
                 }), 403
 
-            # 🔹 Check duplicate scan
+            # 🔹 Prevent duplicate scan
             cur.execute("""
-                SELECT id FROM meal_attendance
+                SELECT id
+                FROM meal_attendance
                 WHERE user_id=%s AND meal_type=%s AND attendance_date=%s
             """, (user_id, meal_type, today))
             if cur.fetchone():
@@ -995,16 +1003,18 @@ def scan_qr():
                 VALUES (%s, %s, %s)
             """, (user_id, meal_type, today))
 
-            # 🔹 Increment mess_count
+            # 🔹 Increment mess_count and commit
             cur.execute("UPDATE users SET mess_count = mess_count + 1 WHERE id = %s", (user_id,))
             conn.commit()
 
-            # 🔹 Increment temporary live counter
-            live_counts[meal_type] += 1  
+            # 🔹 Update in-memory live counter
+            live_counts.setdefault(meal_type, 0)
+            live_counts[meal_type] += 1
 
-            # 🔹 Get updated count from DB
+            # 🔹 Get updated DB count
             cur.execute("""
-                SELECT COUNT(*) AS count FROM meal_attendance
+                SELECT COUNT(*) AS count
+                FROM meal_attendance
                 WHERE meal_type=%s AND attendance_date=%s
             """, (meal_type, today))
             result = cur.fetchone()
@@ -1019,23 +1029,24 @@ def scan_qr():
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
-
     finally:
         conn.close()
 
 @app.route('/admin/live_count/<meal_type>')
 @login_required
 def live_count(meal_type):
-    """Return the real-time count for the given meal_type (today)."""
-
+    """
+    Return the real-time attendance count for the given meal_type (today).
+    Now supports: breakfast, lunch, dinner, snacks.
+    """
     if not getattr(current_user, 'is_admin', False):
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
-    if meal_type not in ('breakfast', 'lunch', 'dinner'):
+    # ✅ allow snacks
+    if meal_type not in ('breakfast', 'lunch', 'dinner', 'snacks'):
         return jsonify({'success': False, 'message': 'Invalid meal type'}), 400
 
     today = date.today()
-    total = 0
     try:
         conn = mysql_pool.get_connection()
         cur = conn.cursor(dictionary=True)
@@ -1050,8 +1061,11 @@ def live_count(meal_type):
         cur.close()
         conn.close()
 
-    return jsonify({'success': True, 'meal_type': meal_type, 'count': total})
-
+    return jsonify({
+        'success': True,
+        'meal_type': meal_type,
+        'count': total
+    })
 
 
 # -------- ADMIN: VIEW CONFIRMED QR COUNTS --------
@@ -1212,6 +1226,10 @@ import MySQLdb
 @app.route('/admin/add_count', methods=['POST'])
 @login_required
 def add_count():
+    """
+    Save the confirmed count for a given meal and date.
+    Now supports: breakfast, lunch, dinner, snacks.
+    """
     if not current_user.is_admin:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
@@ -1219,33 +1237,43 @@ def add_count():
     meal_type = data.get('meal_type')
     meal_date = data.get('meal_date') or date.today()
 
-    if meal_type not in ['breakfast', 'lunch', 'dinner']:
+    # ✅ allow snacks
+    if meal_type not in ['breakfast', 'lunch', 'dinner', 'snacks']:
         return jsonify({'success': False, 'message': 'Invalid meal type'}), 400
 
     conn = mysql_pool.get_connection()
     cur = conn.cursor(dictionary=True)
-    # ✅ count straight from DB
-    cur.execute("""
-        SELECT COUNT(*) AS c FROM meal_attendance
-        WHERE meal_type=%s AND attendance_date=%s
-    """, (meal_type, meal_date))
-    row = cur.fetchone()
-    count = row['c']
-    if count == 0:
-        return jsonify({'success': False, 'message': 'No attendance to save'}), 400
+    try:
+        # Count current attendance for that meal & date
+        cur.execute("""
+            SELECT COUNT(*) AS c
+            FROM meal_attendance
+            WHERE meal_type=%s AND attendance_date=%s
+        """, (meal_type, meal_date))
+        row = cur.fetchone()
+        count = row['c'] if row else 0
 
-    cur.execute("""
-        INSERT INTO daily_meal_attendance (meal_date, meal_type, total_count)
-        VALUES (%s,%s,%s)
-        ON DUPLICATE KEY UPDATE total_count = VALUES(total_count)
-    """, (meal_date, meal_type, count))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({'success': True, 'meal_type': meal_type,
-                    'total_people_added': count, 'meal_date': str(meal_date)})
+        if count == 0:
+            return jsonify({'success': False, 'message': 'No attendance to save'}), 400
 
+        # Insert or update the daily total
+        cur.execute("""
+            INSERT INTO daily_meal_attendance (meal_date, meal_type, total_count)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE total_count = VALUES(total_count)
+        """, (meal_date, meal_type, count))
+        conn.commit()
 
+        return jsonify({
+            'success': True,
+            'meal_type': meal_type,
+            'total_people_added': count,
+            'meal_date': str(meal_date)
+        })
+
+    finally:
+        cur.close()
+        conn.close()
 
 from flask import flash, redirect, url_for, render_template, request
 import MySQLdb
@@ -1455,9 +1483,11 @@ from decimal import Decimal
 
 MESS_WINDOWS = {
     'breakfast': (time(7,30), time(11,30)),
-    'lunch': (time(12,0), time(14,0)),
-    'dinner': (time(19,0), time(23,59)),
+    'lunch':     (time(12,0), time(14,0)),
+    'snacks':    (time(16,0), time(18,0)),
+    'dinner':    (time(19,0), time(23,59)),
 }
+
 
 from flask import (
     render_template, request, redirect, url_for,
@@ -1472,9 +1502,10 @@ def generate_bills():
     """
     Generate or regenerate monthly bills.
 
-    • Calculates active days (minus closed days).
-    • Subtracts mess-cut days (if ≥3).
-    • Adds fines and establishment fee.
+    • Calculates active days (minus mess-closed days).
+    • Subtracts mess-cut days (if ≥3 consecutive).
+    • Adds fines (now includes breakfast, lunch, dinner **and snacks**).
+    • Adds establishment fee.
     • Deletes existing bills for the same month before inserting new ones.
     """
     if not getattr(current_user, 'is_admin', False):
@@ -1503,9 +1534,9 @@ def generate_bills():
             start_date_obj = date(year, month, 1)
             end_date_obj   = date(year, month,
                                   calendar.monthrange(year, month)[1])
-            bill_date = start_date_obj   # the date we store in `bills`
+            bill_date = start_date_obj
 
-            # Closed days (comma separated DD-MM-YYYY)
+            # Closed days (comma-separated DD-MM-YYYY)
             closed_dates = set()
             closed_str = request.form.get('mess_closed_dates', '')
             if closed_str:
@@ -1520,7 +1551,7 @@ def generate_bills():
             )
             base_active_days = total_days - closed_count
 
-            # 🔑 First delete any old bills for this month
+            # 🔑 Delete any old bills for this month
             cur.execute("DELETE FROM bills WHERE bill_date=%s", (bill_date,))
             conn.commit()
 
@@ -1547,19 +1578,20 @@ def generate_bills():
                         cut_start + timedelta(days=i)
                         for i in range((cut_end - cut_start).days + 1)
                     }
-                    # ignore mess-closed days
+                    # Ignore mess-closed days
                     active_cut_dates = {d for d in cut_dates if d not in closed_dates}
-                    # only count if ≥3 continuous days
+                    # Only count if ≥3 continuous days
                     if len(active_cut_dates) >= 3:
                         mess_cut_days += len(active_cut_dates)
 
                 chargeable_days = max(base_active_days - mess_cut_days, 0)
 
-                # ---- fines ----
+                # ---- fines (includes snacks automatically) ----
                 cur.execute("""
                     SELECT SUM(fine_amount) AS total_fines
                     FROM fines
-                    WHERE user_id=%s AND fine_date BETWEEN %s AND %s
+                    WHERE user_id=%s
+                      AND fine_date BETWEEN %s AND %s
                 """, (user['id'], start_date_obj, end_date_obj))
                 fine_row = cur.fetchone()
                 total_fines = float(fine_row['total_fines'] or 0.0)
@@ -1625,17 +1657,18 @@ def generate_bills():
             )
 
     except Exception as e:
-        if conn: conn.rollback()
+        if conn:
+            conn.rollback()
         current_app.logger.exception("Error generating bills")
         flash(f"Error generating bills: {e}", "danger")
     finally:
-        if cur: cur.close()
-        if conn: conn.close()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
-    # Renders page with whatever was just generated (or empty on first load)
     return render_template('admin_generate_bills.html',
                            bills_generated=bills_generated)
-
 
 
 # Reset bills session
@@ -1718,7 +1751,7 @@ from flask_login import login_required, current_user
 def add_fine():
     """
     Admin can add fines for users who did NOT scan
-    for a chosen meal (breakfast, lunch, dinner),
+    for a chosen meal (breakfast, lunch, dinner, snacks),
     excluding:
       • Users with an active mess cut (today between start_date & end_date)
       • Users who have a skip entry for that meal & date.
@@ -1730,6 +1763,12 @@ def add_fine():
     today = date.today()
     meal_type = request.args.get('meal_type') or request.form.get('meal_type')
     users_to_fine = []
+
+    # ✅ allow snacks
+    valid_meals = ['breakfast', 'lunch', 'dinner', 'snacks']
+    if meal_type and meal_type not in valid_meals:
+        flash("Invalid meal type", "danger")
+        return redirect(url_for('admin_dashboard'))
 
     if not meal_type:
         return render_template(
@@ -2012,9 +2051,15 @@ from flask_login import login_required, current_user
 @app.route('/user/mess_skip', methods=['GET', 'POST'])
 @login_required
 def mess_skip():
+    """
+    Allow a user to mark mess skips (breakfast / lunch / dinner / snacks)
+    and view all their previous skips.
+    """
     if request.method == 'POST':
         skip_date = request.form.get('skip_date')
-        meals = [meal for meal in ['breakfast', 'lunch', 'dinner'] if meal in request.form]
+        # ✅ include 'snacks' in the allowed meals
+        meals = [meal for meal in ['breakfast', 'lunch', 'dinner', 'snacks']
+                 if meal in request.form]
 
         conn = mysql_pool.get_connection()
         cur = conn.cursor()
@@ -2024,7 +2069,7 @@ def mess_skip():
                 cur.execute("""
                     INSERT INTO mess_skips (user_id, skip_date, meal_type)
                     VALUES (%s, %s, %s)
-                    ON DUPLICATE KEY UPDATE user_id=user_id
+                    ON DUPLICATE KEY UPDATE user_id = user_id
                 """, (current_user.id, skip_date, meal))
             conn.commit()
             flash("✅ Mess skip updated successfully!", "success")
@@ -2037,29 +2082,7 @@ def mess_skip():
 
         return redirect(url_for('mess_skip'))
 
-    # ➜ Fetch all skips for the logged-in user and convert to Indian date format
-    conn = mysql_pool.get_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("""
-        SELECT skip_date, meal_type
-        FROM mess_skips
-        WHERE user_id = %s
-        ORDER BY skip_date DESC
-    """, (current_user.id,))
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-
-    # Format each skip_date as DD-MM-YYYY
-    for r in rows:
-        if r['skip_date']:
-            r['skip_date'] = r['skip_date'].strftime("%d-%m-%Y")
-
-    # Pass `rows` to template as `skips`
-    return render_template('user_mess_skip.html', skips=rows)
-
-
-    # ---------- NEW: fetch this user's skips ----------
+    # ---------- Fetch all skips for this user ----------
     conn = mysql_pool.get_connection()
     cur = conn.cursor(dictionary=True)
     skips = []
@@ -2077,27 +2100,35 @@ def mess_skip():
         cur.close()
         conn.close()
 
+    # Format each skip_date as DD-MM-YYYY
+    for r in skips:
+        if r['skip_date']:
+            r['skip_date'] = r['skip_date'].strftime("%d-%m-%Y")
+
     return render_template('user_mess_skip.html', skips=skips)
-
-
 
 
 
 @app.route('/admin/mess_skips')
 @login_required
 def admin_mess_skips():
+    """
+    Show tomorrow's mess skips for all meals, including snacks.
+    """
     if not getattr(current_user, 'is_admin', False):
         flash("Unauthorized access!", "danger")
         return redirect(url_for('index'))
 
     tomorrow = date.today() + timedelta(days=1)
-    skips = {'breakfast': [], 'lunch': [], 'dinner': []}
-    skip_counts = {'breakfast': 0, 'lunch': 0, 'dinner': 0}
+
+    # ✅ include snacks
+    skips = {'breakfast': [], 'lunch': [], 'dinner': [], 'snacks': []}
+    skip_counts = {'breakfast': 0, 'lunch': 0, 'dinner': 0, 'snacks': 0}
 
     conn = mysql_pool.get_connection()
     cur = conn.cursor(dictionary=True)
     try:
-        # 🔹 Explicitly print what we're querying
+        # Debug log
         print(f"Fetching mess skips for date: {tomorrow}")
 
         cur.execute("""
@@ -2114,6 +2145,7 @@ def admin_mess_skips():
         for row in rows:
             meal = row['meal_type']
             name = row['name']
+            # add to correct list, including snacks
             if meal in skips:
                 skips[meal].append(name)
                 skip_counts[meal] += 1
@@ -2130,11 +2162,12 @@ def admin_mess_skips():
     print(f"Skip counts: {skip_counts}")
     print(f"Skips data: {skips}")
 
-    return render_template("admin_mess_skips.html",
-                           skips=skips,
-                           skip_counts=skip_counts,
-                           tomorrow=tomorrow)
-
+    return render_template(
+        "admin_mess_skips.html",
+        skips=skips,
+        skip_counts=skip_counts,
+        tomorrow=tomorrow
+    )
 
 
 from flask import jsonify, request, render_template
