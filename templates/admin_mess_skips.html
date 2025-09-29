@@ -29,14 +29,27 @@
                     </p>
                     
                     {% if skips[meal] %}
-                        <ul class="list-group list-group-flush list-group-sm">
-                            {% for name in skips[meal] %}
-                                <li class="list-group-item list-group-item-action fw-medium" 
-                                    style="border-radius: 8px; margin-bottom: 4px; border: none;">
-                                    {{ name }}
-                                </li>
-                            {% endfor %}
-                        </ul>
+                        <div class="text-center mb-3">
+                            <a class="btn btn-sm text-decoration-none fw-bold toggle-list-btn" 
+                                data-bs-toggle="collapse" 
+                                href="#skipList{{ meal }}" 
+                                role="button" 
+                                aria-expanded="false" 
+                                aria-controls="skipList{{ meal }}">
+                                View Skips ({{ skip_counts[meal] }})
+                            </a>
+                        </div>
+                        
+                        <div class="collapse" id="skipList{{ meal }}">
+                            <ul class="list-group list-group-flush list-group-sm">
+                                {% for name in skips[meal] %}
+                                    <li class="list-group-item list-group-item-action fw-medium" 
+                                        style="border-radius: 8px; margin-bottom: 4px; border: none;">
+                                        {{ name }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     {% else %}
                         <p class="text-center text-muted small mt-4">
                             All set! No skips for this meal.
@@ -68,6 +81,24 @@
     font-weight: 700;
     color: var(--primary); /* Rose Pink for the count */
 }
+
+/* Toggle Button Style */
+.toggle-list-btn {
+    color: var(--secondary); /* Lavender color */
+    background-color: var(--sidebar-hover); /* Light Pink background */
+    border-radius: 50px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+.toggle-list-btn:hover {
+    background-color: var(--primary);
+    color: white;
+}
+.toggle-list-btn:focus {
+    box-shadow: 0 0 0 0.25rem rgba(185, 128, 242, 0.5); /* Soft focus ring */
+}
+
 
 /* List Item Styles */
 .list-group-sm .list-group-item {
