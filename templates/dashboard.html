@@ -1,53 +1,98 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="dashboard text-center p-4">
+<div class="dashboard text-center py-5 px-3">
 
-    <!-- Welcome -->
-    <h2 class="fw-bold mb-4 text-dark">
-        Welcome, <span class="text-primary">{{ current_user.name }}</span>!
+    <h2 class="fw-bold mb-3" style="font-family: 'Playfair Display', serif; color: var(--text-color); font-size: 2.2rem;">
+        Hello, <span style="color: var(--primary);">{{ current_user.name }}</span>!
     </h2>
+    <p class="mb-5 text-muted fw-light" style="font-family: 'Roboto', sans-serif;">
+        Your daily mess management is just a tap away.
+    </p>
 
-    <!-- Actions -->
-    <h4 class="fw-semibold mb-3 text-secondary">Quick Actions</h4>
+    <h4 class="fw-semibold mb-4" style="color: var(--secondary); font-family: 'Roboto', sans-serif;">
+        ✨ Quick Actions
+    </h4>
 
-    <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
-        <!-- My QR First -->
+    <div class="d-grid gap-3 mx-auto" style="max-width: 450px;">
+        
         <a href="{{ url_for('my_qr') }}" 
-           class="btn btn-lg w-100 w-md-auto"
-           style="background-color:#e67e22; color:white; border-radius:12px; font-weight:600;">
-            📲 My QR Code
+           class="btn btn-lg w-100 theme-action-btn theme-qr-btn">
+            <i class="fas fa-qrcode me-2"></i> My QR Code
         </a>
 
-        <!-- Apply Mess Cut -->
         <a href="{{ url_for('apply_mess_cut') }}" 
-           class="btn btn-lg w-100 w-md-auto"
-           style="background-color:#3498db; color:white; border-radius:12px; font-weight:600;">
-            ✂️ Apply Mess Cut
+           class="btn btn-lg w-100 theme-action-btn theme-cut-btn">
+            <i class="fas fa-cut me-2"></i> Apply Mess Cut
         </a>
 
-        <!-- Request Late Mess -->
         <a href="{{ url_for('request_late_mess') }}" 
-           class="btn btn-lg w-100 w-md-auto"
-           style="background-color:#1abc9c; color:white; border-radius:12px; font-weight:600;">
-            🍽️ Request Late Mess
+           class="btn btn-lg w-100 theme-action-btn theme-late-btn">
+            <i class="fas fa-clock me-2"></i> Request Late Mess
         </a>
     </div>
 
 </div>
 
 <style>
+    /* ------------------ Theme-Specific Styles ------------------ */
+
     .dashboard {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Roboto', sans-serif;
     }
-    .btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 14px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
+
+    /* Base Button Style */
+    .theme-action-btn {
+        border-radius: 15px; /* Softer, rounded corners */
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 15px 20px;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        border: none;
+        color: var(--text-color); /* Use dark text on light backgrounds */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
+    
+    .theme-action-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        color: white; /* Change text to white on hover for better contrast */
+    }
+
+    /* QR Code Button (Calm Peach/Orange) */
+    .theme-qr-btn {
+        background: linear-gradient(135deg, #FFD078, #F7AB5C);
+        color: #9C7948; /* Darker text for base state */
+    }
+    .theme-qr-btn:hover {
+        background: linear-gradient(135deg, var(--primary), #E85E9A); /* Rose Pink focus on hover */
+    }
+
+    /* Mess Cut Button (Soft Lavender/Purple) */
+    .theme-cut-btn {
+        background: linear-gradient(135deg, #E6E0F8, #C8B9F2);
+        color: #6A5B9B; /* Darker text for base state */
+    }
+    .theme-cut-btn:hover {
+        background: linear-gradient(135deg, var(--secondary), #A08CDD); /* Stronger Lavender on hover */
+    }
+
+    /* Late Mess Button (Muted Mint/Green) */
+    .theme-late-btn {
+        background: linear-gradient(135deg, #A4E8CC, #7ED6A2);
+        color: #38761D; /* Darker text for base state */
+    }
+    .theme-late-btn:hover {
+        background: linear-gradient(135deg, #1abc9c, #16a085); /* Darker Mint on hover */
+    }
+
+    /* Mobile Layout Adjustment */
     @media (max-width: 768px) {
-        .btn {
+        .theme-action-btn {
             font-size: 1rem;
-            padding: 12px;
+            padding: 14px;
+        }
+        .d-grid {
+            gap: 15px !important; /* Slightly tighter gap on mobile */
         }
     }
 </style>
