@@ -1,85 +1,134 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="mb-4 text-center">Add Meal Fines</h2>
+<h2 class="mb-4 text-center fw-bold" style="font-family: 'Playfair Display', serif; color: var(--text-color);">
+    💰 Add Meal Fines
+</h2>
 
-<!-- Meal type selector -->
-<form method="get" action="{{ url_for('add_fine') }}" class="mb-4 d-flex justify-content-center">
-  <label for="meal_type" class="me-2 fw-bold">Choose meal:</label>
-  <select name="meal_type" id="meal_type" class="form-select w-auto" onchange="this.form.submit()">
-    <option value="" {% if not meal_type %}selected{% endif %}>-- Select Meal --</option>
-    <option value="breakfast" {% if meal_type=='breakfast' %}selected{% endif %}>Breakfast</option>
-    <option value="lunch" {% if meal_type=='lunch' %}selected{% endif %}>Lunch</option>
-    <option value="dinner" {% if meal_type=='dinner' %}selected{% endif %}>Dinner</option>
-    <!-- ✅ New Snacks Option -->
-    <option value="snacks" {% if meal_type=='snacks' %}selected{% endif %}>Snacks</option>
-  </select>
+<form method="get" action="{{ url_for('add_fine') }}" class="mb-4 d-flex flex-column flex-sm-row align-items-center justify-content-center">
+    <label for="meal_type" class="me-sm-2 mb-2 mb-sm-0 fw-bold" style="color: var(--secondary);">
+        Choose meal:
+    </label>
+    <select name="meal_type" id="meal_type" class="form-select w-75 w-sm-auto shadow-sm" style="border-radius: var(--radius); border-color: var(--primary); font-family: 'Roboto', sans-serif;" onchange="this.form.submit()">
+        <option value="" {% if not meal_type %}selected{% endif %}>-- Select Meal --</option>
+        <option value="breakfast" {% if meal_type=='breakfast' %}selected{% endif %}>Breakfast</option>
+        <option value="lunch" {% if meal_type=='lunch' %}selected{% endif %}>Lunch</option>
+        <option value="dinner" {% if meal_type=='dinner' %}selected{% endif %}>Dinner</option>
+        <option value="snacks" {% if meal_type=='snacks' %}selected{% endif %}>Snacks</option>
+    </select>
 </form>
 
 {% if meal_type %}
-  {% if non_scanned_users %}
-    <form method="POST" id="finesForm" class="card shadow p-3">
-      <input type="hidden" name="meal_type" value="{{ meal_type }}">
+    {% if non_scanned_users %}
+        <form method="POST" id="finesForm" class="card shadow p-3" style="border-radius: var(--radius); border: none;">
+            <input type="hidden" name="meal_type" value="{{ meal_type }}">
 
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Fine (₹)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for user in non_scanned_users %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>{{ user.name }}</td>
-              <td>{{ user.email }}</td>
-              <td>
-                <input type="hidden" name="user_id" value="{{ user.id }}">
-                <input type="number" name="fine" step="0.01" min="0"
-                       class="form-control fine-input"
-                       placeholder="0.00">
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+            <div class="table-responsive">
+                <table class="table table-borderless table-sm align-middle mb-0" style="font-family: 'Roboto', sans-serif;">
+                    <thead class="bg-light" style="background-color: var(--sidebar-hover) !important;">
+                        <tr>
+                            <th scope="col" class="text-center" style="width: 10%;">#</th>
+                            <th scope="col" style="width: 35%; color: var(--text-color);">Name</th>
+                            <th scope="col" class="d-none d-md-table-cell" style="width: 35%;">Email</th>
+                            <th scope="col" style="width: 20%; color: var(--text-color);">Fine (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in non_scanned_users %}
+                        <tr>
+                            <td class="text-center fw-bold" style="color: var(--secondary);">{{ loop.index }}</td>
+                            <td>{{ user.name }}</td>
+                            <td class="text-muted small d-none d-md-table-cell">{{ user.email }}</td>
+                            <td>
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <input type="number" name="fine" step="1" min="0" 
+                                       class="form-control form-control-sm fine-input text-end shadow-sm"
+                                       placeholder="0" style="border-radius: 8px; border-color: #f1f1f1;">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <hr class="mt-3 mb-3" style="border-top: 1px dashed #E5E7EB;">
 
-      <div class="d-flex justify-content-between mt-3">
-        <div class="fw-bold">
-          Total Fine: ₹<span id="totalFine">0.00</span>
-        </div>
-        <button type="submit" class="btn btn-primary">
-          Save Fines
-        </button>
-      </div>
-    </form>
-  {% else %}
-    <p class="alert alert-success text-center">
-      🎉 No users to fine for {{ meal_type|capitalize }} today.
-    </p>
-  {% endif %}
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center p-2 rounded-3 sticky-bottom-footer" 
+                 style="background-color: var(--content-bg);">
+                <div class="fw-bold mb-2 mb-sm-0" style="color: var(--primary); font-size: 1.1rem;">
+                    Total Fines: ₹<span id="totalFine" class="ms-1">0.00</span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100 w-sm-auto shadow" 
+                        style="background: var(--primary); border-color: var(--primary); border-radius: 10px; font-weight: 600;">
+                    <i class="fas fa-save me-1"></i> Save Fines
+                </button>
+            </div>
+        </form>
+    {% else %}
+        <p class="alert text-center" style="background-color: #D4EDDA; color: #155724; border-radius: var(--radius);">
+            🎉 No users to fine for **{{ meal_type|capitalize }}** today.
+        </p>
+    {% endif %}
 {% else %}
-  <p class="alert alert-info text-center">
-    Please choose a meal above to view non-scanned users.
-  </p>
+    <p class="alert text-center" style="background-color: #E2F0F7; color: #0C5460; border-radius: var(--radius);">
+        👆 Please choose a meal above to view non-scanned users.
+    </p>
 {% endif %}
 
-<!-- Live total calculation -->
+<style>
+    /* Ensure fine inputs are easy to tap */
+    .fine-input {
+        min-width: 65px;
+        max-width: 100px;
+    }
+    
+    /* Make table rows more tappable and readable on mobile */
+    .table-hover tbody tr:hover {
+        background-color: var(--sidebar-hover) !important;
+    }
+    
+    /* Mobile-specific adjustments for the sticky footer/summary */
+    .sticky-bottom-footer {
+        position: -webkit-sticky; /* For Safari */
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        /* Adding a subtle card effect to the footer on mobile */
+        box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+        border-radius: 0 0 var(--radius) var(--radius);
+        margin-left: -1rem; /* Adjust to cover full card width */
+        margin-right: -1rem;
+        width: calc(100% + 2rem);
+    }
+    
+    /* Hide Email column on small screens to save space */
+    @media (max-width: 767.98px) {
+        .d-md-table-cell {
+            display: none !important;
+        }
+        .table-sm th, .table-sm td {
+            padding: 0.5rem 0.5rem;
+        }
+        /* Full width button on mobile */
+        .sticky-bottom-footer button {
+            width: 100% !important;
+        }
+    }
+</style>
+
 <script>
 document.addEventListener('input', function (e) {
-  if (e.target.classList.contains('fine-input')) {
-    let total = 0;
-    document.querySelectorAll('.fine-input').forEach(inp => {
-      const val = parseFloat(inp.value) || 0;
-      total += val;
-    });
-    document.getElementById('totalFine').textContent = total.toFixed(2);
-  }
+    if (e.target.classList.contains('fine-input')) {
+        let total = 0;
+        document.querySelectorAll('.fine-input').forEach(inp => {
+            // Use Math.round for better floating point arithmetic control
+            const val = Math.round(parseFloat(inp.value) * 100) / 100 || 0;
+            total += val;
+        });
+        document.getElementById('totalFine').textContent = total.toFixed(2);
+    }
 });
 </script>
 
