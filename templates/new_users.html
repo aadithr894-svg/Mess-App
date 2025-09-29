@@ -3,7 +3,7 @@
 <div class="container py-4" style="font-family: 'Roboto', sans-serif;">
 
     <h2 class="mb-5 text-center text-md-start fw-bold" style="font-family: 'Playfair Display', serif; color: var(--primary);">
-        💌 Pending User Approvals
+        ⏳ Pending User Approvals
     </h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -62,7 +62,7 @@
         </div>
     {% else %}
         <div class="alert text-center rounded-3 mt-4" style="background-color: #A4E8CC; color: #38761D;">
-             No pending users for approval right now.
+            **Success! ✨** No pending users for approval right now.
         </div>
     {% endif %}
 
