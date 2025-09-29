@@ -1,65 +1,135 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container py-3">
+<div class="container py-4" style="font-family: 'Roboto', sans-serif;">
 
-  <h2 class="mb-4 text-center text-md-start">🚀 Pending User Approvals</h2>
+    <h2 class="mb-5 text-center text-md-start fw-bold" style="font-family: 'Playfair Display', serif; color: var(--primary);">
+        💌 Pending User Approvals
+    </h2>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show rounded-3" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if users %}
+        <div class="row g-3">
+            {% for user in users %}
+            <div class="col-12">
+                <div class="card shadow-sm border-0 rounded-4 theme-approval-card">
+
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-3 theme-card-header-bg">
+                        <div class="fw-bold text-truncate"
+                             style="cursor:pointer; color: var(--secondary);"
+                             data-bs-toggle="collapse"
+                             data-bs-target="#details{{ loop.index }}"
+                             aria-expanded="false"
+                             aria-controls="details{{ loop.index }}">
+                            <span class="text-muted me-2 small">#{{ loop.index }}</span> {{ user.name }}
+                        </div>
+
+                        <div class="d-flex flex-column flex-sm-row gap-2 ms-auto approval-actions">
+                            <a href="{{ url_for('approve_user', user_id=user.id) }}"
+                               class="btn btn-sm theme-btn-approve">
+                                ✅ Approve
+                            </a>
+                            <a href="{{ url_for('reject_user', user_id=user.id) }}"
+                               class="btn btn-sm theme-btn-reject">
+                                ❌ Reject
+                            </a>
+                        </div>
+                    </div>
+
+                    <div id="details{{ loop.index }}" class="collapse">
+                        <div class="card-body theme-card-details">
+                            <ul class="list-unstyled mb-0 small ps-2">
+                                <li><strong>Email:</strong> <span class="text-break">{{ user.email }}</span></li>
+                                <li><strong>Phone:</strong> {{ user.phone }}</li>
+                                <li><strong>Course:</strong> {{ user.course }}</li>
+                                <li><strong>User Type:</strong> <span class="badge bg-light text-dark fw-bold">{{ user.user_type|capitalize }}</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
         </div>
-      {% endfor %}
+    {% else %}
+        <div class="alert text-center rounded-3 mt-4" style="background-color: #A4E8CC; color: #38761D;">
+            🎉 Hooray! No pending users for approval right now.
+        </div>
     {% endif %}
-  {% endwith %}
-
-  {% if users %}
-    <div class="row g-3">
-      {% for user in users %}
-      <div class="col-12">
-        <div class="card shadow-sm border-0 rounded-4">
-
-          <!-- Top row: Name + Approve/Reject buttons -->
-          <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <div  class="fw-semibold"
-                  style="cursor:pointer;"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#details{{ loop.index }}"
-                  aria-expanded="false"
-                  aria-controls="details{{ loop.index }}">
-              #{{ loop.index }} &nbsp; {{ user.name }}
-            </div>
-            <div class="ms-auto">
-              <a href="{{ url_for('approve_user', user_id=user.id) }}"
-                 class="btn btn-success btn-sm me-2">✅ Approve</a>
-              <a href="{{ url_for('reject_user', user_id=user.id) }}"
-                 class="btn btn-danger btn-sm">❌ Reject</a>
-            </div>
-          </div>
-
-          <!-- Collapsible details -->
-          <div id="details{{ loop.index }}" class="collapse">
-            <div class="card-body">
-              <ul class="list-unstyled mb-0 small">
-                <li><strong>Email:</strong> <span class="text-break">{{ user.email }}</span></li>
-                <li><strong>Phone:</strong> {{ user.phone }}</li>
-                <li><strong>Course:</strong> {{ user.course }}</li>
-                <li><strong>User Type:</strong> {{ user.user_type|capitalize }}</li>
-              </ul>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="alert alert-info text-center mt-4">
-      🎉 No pending users for approval.
-    </div>
-  {% endif %}
 
 </div>
+
+<style>
+    /* Card Container */
+    .theme-approval-card {
+        background-color: var(--card-bg);
+        border: 1px solid #FADDE3 !important; /* Soft Pink Border */
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .theme-approval-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+    }
+
+    /* Card Header */
+    .theme-card-header-bg {
+        background-color: var(--sidebar-hover) !important; /* Light Pink Background */
+        padding: 1rem 1.25rem;
+    }
+    
+    /* Collapsible Details Body */
+    .theme-card-details {
+        background-color: #FEF7F9; /* Even lighter pink for background contrast */
+        border-top: 1px dashed #F2A9C3; /* Dotted line separation */
+    }
+    .theme-card-details li strong {
+        color: var(--secondary); /* Lavender for labels */
+    }
+
+    /* Approve Button (Soft Green/Teal) */
+    .theme-btn-approve {
+        background-color: #A4E8CC;
+        color: #38761D;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        border-radius: 8px;
+    }
+    .theme-btn-approve:hover {
+        background-color: #7ED6A2;
+        color: #38761D;
+    }
+
+    /* Reject Button (Rose Pink) */
+    .theme-btn-reject {
+        background-color: var(--primary);
+        color: white;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        border-radius: 8px;
+    }
+    .theme-btn-reject:hover {
+        background-color: #E85E9A;
+        color: white;
+    }
+
+    /* Mobile Adjustments */
+    @media (max-width: 575.98px) {
+        .approval-actions {
+            width: 100%; /* Make buttons take full width when stacking */
+            flex-direction: column !important;
+        }
+        .approval-actions a {
+            flex-grow: 1;
+        }
+    }
+</style>
 {% endblock %}
