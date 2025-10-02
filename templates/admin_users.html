@@ -1,10 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-4" style="font-family: 'Roboto', sans-serif;">
-
-    <h2 class="mb-4 text-center text-md-start fw-bold" style="font-family: 'Playfair Display', serif; color: var(--secondary);">
-        👥 All Hostel Users
+<div class="container mt-4">
+    <h2 class="mb-4 text-center text-md-start fw-bold" style="font-family: 'Poppins', sans-serif; color: var(--primary);">
+        <i class="fas fa-users me-2" style="color: #3498DB;"></i> All Resident Profiles
     </h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -19,7 +18,8 @@
     {% endwith %}
 
     <div class="mb-4">
-        <input type="text" id="searchInput" class="form-control rounded-pill shadow-sm" placeholder="Search by name, ID, or email..." style="border-color: #FEE2E2;">
+        <input type="text" id="searchInput" class="form-control rounded-pill shadow-sm" 
+               placeholder="Search by name, ID, or email..." style="border-color: #DDE1E5;">
     </div>
 
     <div id="usersList" class="row g-4"> {% for user in users %}
@@ -27,12 +27,12 @@
             <div class="card shadow-sm custom-card user-card-{{ user.id }}">
 
                 <div class="card-top-bar d-flex justify-content-between align-items-center p-3"
-                     data-bs-toggle="collapse" 
-                     data-bs-target="#collapseMobile{{ user.id }}" 
-                     aria-expanded="false" 
-                     aria-controls="collapseMobile{{ user.id }}" 
-                     style="cursor: pointer;">
-                    <h5 class="mb-0 fw-bold" style="color: var(--text-color); font-size: 1.1rem;">
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#collapseMobile{{ user.id }}" 
+                    aria-expanded="false" 
+                    aria-controls="collapseMobile{{ user.id }}" 
+                    style="cursor: pointer;">
+                    <h5 class="mb-0 fw-bold" style="color: var(--text-color); font-size: 1.05rem;">
                         <span class="text-muted small me-2">{{ loop.index }}.</span> {{ user.name }}
                     </h5>
                     <span class="badge rounded-pill fw-semibold text-uppercase
@@ -70,9 +70,9 @@
 <style>
 /* Custom Card Styles */
 .custom-card {
-    background-color: var(--card-bg); /* White background */
+    background-color: var(--card-bg);
     border-radius: var(--radius);
-    border: 1px solid #F3F4F6; /* Very light border */
+    border: 1px solid #EAEAEA; /* Light, clean border */
     transition: transform 0.2s, box-shadow 0.2s;
     overflow: hidden;
 }
@@ -84,43 +84,43 @@
 
 /* Header bar for click/toggle on mobile */
 .card-top-bar {
-    background: var(--sidebar-hover); /* Light pink/hover color for the header */
-    border-bottom: 1px dashed #F3F4F6;
+    background: var(--sidebar-hover); /* Very Light Gray hover color */
+    border-bottom: 1px dashed #E0E0E0;
 }
 
-/* User Type Badges - using complementary colors */
+/* User Type Badges - Clean, distinct colors */
 .badge-inmate {
-    background-color: #A4E8CC !important; /* Soft Green */
-    color: #38761D !important;
+    background-color: #D6EAF8 !important; /* Soft Light Blue */
+    color: #21618C !important;
 }
 .badge-outmess {
-    background-color: #FFD078 !important; /* Soft Peach */
-    color: #A0522D !important;
+    background-color: #FADBD8 !important; /* Soft Salmon/Red tone */
+    color: #943126 !important;
 }
 .badge-guest {
-    background-color: #E6E0F8 !important; /* Soft Lavender */
-    color: #6A5B9B !important;
+    background-color: #FCF3CF !important; /* Soft Cream/Yellow tone */
+    color: #B7950B !important;
 }
 
-/* Delete Button */
+/* Delete Button - Using the defined Secondary (Red) Danger Color */
 .delete-btn {
-    background-color: #FF78B2; /* Primary Rose Pink */
+    background-color: var(--secondary); /* Muted Red */
     border: none;
     color: white;
-    font-weight: 500;
+    font-weight: 600;
     transition: background-color 0.2s;
     /* Explicitly force full rounded corners for the pill effect */
     border-radius: 50px !important;
 }
 .delete-btn:hover {
-    background-color: #E85E9A; /* Darker pink on hover */
+    background-color: #C0392B; /* Darker red on hover */
     color: white;
 }
 
 /* Search input style */
 #searchInput {
     border-radius: 50px !important;
-    border-color: #FEE2E2;
+    border-color: #DDE1E5; /* Light border color */
 }
 
 /* Mobile-specific adjustments: Add an indicator for the collapsible content */
@@ -130,7 +130,7 @@
         font-size: 0.8rem;
         transition: transform 0.3s;
         margin-left: 10px;
-        color: var(--secondary);
+        color: var(--primary); /* Primary Navy Blue indicator */
     }
     /* Rotate the arrow when the card is open */
     .card-top-bar[aria-expanded="true"]::after {
