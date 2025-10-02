@@ -2,7 +2,7 @@
 {% block content %}
 <div class="container py-4" style="font-family: 'Roboto', sans-serif;">
 
-    <h2 class="mb-5 text-center text-md-start fw-bold" style="font-family: 'Playfair Display', serif; color: var(--primary);">
+    <h2 class="mb-5 text-center text-md-start fw-bold" style="font-family: 'Playfair Display', serif; color: #000000;">
         ⏳ Pending User Approvals
     </h2>
 
@@ -25,7 +25,7 @@
 
                     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-3 theme-card-header-bg">
                         <div class="fw-bold text-truncate"
-                             style="cursor:pointer; color: var(--secondary);"
+                             style="cursor:pointer; color: #000000;"
                              data-bs-toggle="collapse"
                              data-bs-target="#details{{ loop.index }}"
                              aria-expanded="false"
@@ -47,11 +47,11 @@
 
                     <div id="details{{ loop.index }}" class="collapse">
                         <div class="card-body theme-card-details">
-                            <ul class="list-unstyled mb-0 small ps-2">
+                            <ul class="list-unstyled mb-0 small ps-2" style="color: #000000;">
                                 <li><strong>Email:</strong> <span class="text-break">{{ user.email }}</span></li>
                                 <li><strong>Phone:</strong> {{ user.phone }}</li>
                                 <li><strong>Course:</strong> {{ user.course }}</li>
-                                <li><strong>User Type:</strong> <span class="badge bg-light text-dark fw-bold">{{ user.user_type|capitalize }}</span></li>
+                                <li><strong>User Type:</strong> <span class="badge bg-dark text-white fw-bold">{{ user.user_type|capitalize }}</span></li>
                             </ul>
                         </div>
                     </div>
@@ -92,7 +92,12 @@
         border-top: 1px dashed #C0D3E0; /* Dotted line separation */
     }
     .theme-card-details li strong {
-        color: #3B5B7D; /* Dark Slate Blue for labels */
+        color: #000000; /* Black for labels */
+    }
+
+    /* Ensure all text within the card is black */
+    .theme-approval-card, .theme-card-header-bg, .theme-card-details {
+        color: #000000;
     }
 
     /* Approve Button (Green) */
