@@ -243,6 +243,7 @@ body {
                 <a href="{{ url_for('add_fine') }}" class="{% if request.endpoint == 'add_fine' %}active{% endif %}"><i class="fas fa-money-check-alt"></i> Add Fine</a>
                 <a href="{{ url_for('admin_mess_skips') }}" class="{% if request.endpoint == 'admin_mess_skips' %}active{% endif %}"><i class="fas fa-ban"></i> Skips {% if skip_count %}<span class="badge bg-danger ms-auto">{{ skip_count }}</span>{% endif %}</a>
                 <a href="{{ url_for('generate_bills') }}" class="{% if request.endpoint == 'generate_bills' %}active{% endif %}"><i class="fas fa-file-invoice-dollar"></i> Bills</a>
+                <a href="{{ url_for('mess_menu') }}" class="{% if request.endpoint == 'mess_menu' %}active{% endif %}"><i class="fas fa-file-invoice-dollar"></i> Mess Menu</a>
             {% else %}
                 <a href="{{ url_for('user_dashboard') }}" class="{% if request.endpoint == 'user_dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a>
                 <a href="{{ url_for('apply_mess_cut') }}" class="{% if request.endpoint == 'apply_mess_cut' %}active{% endif %}"><i class="fas fa-cut"></i> Apply Cut</a>
@@ -250,6 +251,7 @@ body {
                 <a href="{{ url_for('my_qr') }}" class="{% if request.endpoint == 'my_qr' %}active{% endif %}"><i class="fas fa-qrcode"></i> My QR</a>
                 <a href="{{ url_for('mess_skip') }}" class="{% if request.endpoint == 'mess_skip' %}active{% endif %}"><i class="fas fa-calendar-times"></i> Skip Meal</a>
                 <a href="{{ url_for('user_bills') }}" class="{% if request.endpoint == 'user_bills' %}active{% endif %}"><i class="fas fa-receipt"></i> My Bill</a>
+		    <a href="{{ url_for('mess_menu') }}" class="{% if request.endpoint == 'mess_menu' %}active{% endif %}"><i class="fas fa-file-invoice-dollar"></i> Mess Menu</a>
             {% endif %}
         {% endif %}
     </nav>
