@@ -2,120 +2,104 @@
 {% block content %}
 <div class="dashboard text-center py-5 px-3">
 
-    <h2 class="fw-bold mb-3" style="color: var(--text-color); font-size: 2.2rem;">
-        <i class="fas fa-hand-wave me-2" style="color: var(--primary);"></i> Hello, <span style="color: var(--primary);">{{ current_user.name }}</span>!
-    </h2>
-    <p class="mb-5 text-muted fw-light">
-        Your daily mess management is just a tap away.
-    </p>
+    <h2 class="fw-bold mb-3" style="color: var(--text-color); font-size: 2.2rem;">
+        <i class="fas fa-hand-wave me-2" style="color: var(--primary);"></i> Hello, <span style="color: var(--primary);">{{ current_user.name }}</span>!
+    </h2>
+    <p class="mb-5 text-muted fw-light">
+        Your daily mess management is just a tap away.
+    </p>
 
-    <h4 class="fw-semibold mb-4" style="color: var(--primary);">
-        <i class="fas fa-tachometer-alt me-2"></i> Quick Actions
-    </h4>
+    <h4 class="fw-semibold mb-4" style="color: var(--primary);">
+        <i class="fas fa-tachometer-alt me-2"></i> Quick Actions
+    </h4>
 
-    <div class="d-grid gap-3 mx-auto" style="max-width: 450px;">
-        
-        <a href="{{ url_for('my_qr') }}" 
-           class="btn btn-lg w-100 theme-action-btn theme-primary-btn">
-            <i class="fas fa-qrcode me-2"></i> Show My QR Code
-        </a>
+    <div class="d-grid gap-3 mx-auto" style="max-width: 450px;">
+        
+        <a href="{{ url_for('my_qr') }}" 
+           class="btn btn-lg w-100 theme-action-btn theme-primary-btn">
+            <i class="fas fa-qrcode me-2"></i> Show My QR Code
+        </a>
 
-        <a href="{{ url_for('apply_mess_cut') }}" 
-           class="btn btn-lg w-100 theme-action-btn theme-secondary-btn">
-            <i class="fas fa-cut me-2"></i> Apply Mess Cut
-        </a>
+        <a href="{{ url_for('apply_mess_cut') }}" 
+           class="btn btn-lg w-100 theme-action-btn theme-secondary-btn">
+            <i class="fas fa-cut me-2"></i> Apply Mess Cut
+        </a>
 
-        <a href="{{ url_for('request_late_mess') }}" 
-           class="btn btn-lg w-100 theme-action-btn theme-primary-btn">
-            <i class="fas fa-clock me-2"></i> Request Late Mess
-        </a>
-        
-        <a href="{{ url_for('mess_skip') }}" 
-           class="btn btn-lg w-100 theme-action-btn theme-tertiary-btn">
-            <i class="fas fa-calendar-times me-2"></i> Skip Meal
-        </a>
-    </div>
+        <a href="{{ url_for('request_late_mess') }}" 
+           class="btn btn-lg w-100 theme-action-btn theme-primary-btn">
+            <i class="fas fa-clock me-2"></i> Request Late Mess
+        </a>
+        
+        <a href="{{ url_for('mess_skip') }}" 
+           class="btn btn-lg w-100 theme-action-btn theme-tertiary-btn">
+            <i class="fas fa-calendar-times me-2"></i> Skip Meal
+        </a>
+    </div>
 
 </div>
 
 <style>
-    /* ------------------ Blue Theme Overrides ------------------ */
+    /* ------------------ Theme-Specific Styles ------------------ */
 
-    /* Override Base Variables for a cohesive blue look */
-    :root {
-        /* Primary: Vibrant, action-focused blue */
-        --primary: #3498DB; 
-        /* Secondary: Lighter, more subdued blue (replaces the original red) */
-        --secondary: #5DADE2;
-        /* Text Color: Deep Navy for contrast */
-        --text-color: #1A5276; 
-        /* Border: Light gray-blue */
-        --border-light: #BDC3C7;
-        /* Hover: Very light blue-gray */
-        --sidebar-hover: #E8F6FF;
-    }
+    /* Base Button Style */
+    .theme-action-btn {
+        border-radius: var(--radius);
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 15px 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border: 2px solid transparent; /* Base for outline style */
+    }
+    
+    .theme-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
 
-    /* ------------------ Theme-Specific Styles ------------------ */
+    /* Primary Actions (QR, Late Mess) - Solid Primary Color */
+    .theme-primary-btn {
+        background-color: var(--primary);
+        color: white;
+    }
+    .theme-primary-btn:hover {
+        background-color: #34495E; /* Slightly darker Navy */
+        color: white;
+    }
 
-    /* Base Button Style */
-    .theme-action-btn {
-        border-radius: var(--radius);
-        font-weight: 600;
-        font-size: 1.1rem;
-        padding: 15px 20px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        border: 2px solid transparent; 
-    }
-    
-    .theme-action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(52, 152, 219, 0.25); /* Blue shadow on hover */
-    }
+    /* Secondary/Important Actions (Mess Cut) - Solid Secondary Color (Red) */
+    .theme-secondary-btn {
+        background-color: var(--secondary);
+        color: white;
+    }
+    .theme-secondary-btn:hover {
+        background-color: #C0392B; /* Slightly darker Red */
+        color: white;
+    }
 
-    /* Primary Actions (QR, Late Mess) - Solid Primary Blue */
-    .theme-primary-btn {
-        background-color: var(--primary);
-        color: white;
-    }
-    .theme-primary-btn:hover {
-        background-color: #2980B9; /* Darker Primary Blue */
-        color: white;
-    }
+    /* Tertiary Actions (Skip Meal) - Outline style for lower priority */
+    .theme-tertiary-btn {
+        background-color: transparent;
+        color: var(--text-color);
+        border: 2px solid var(--border-light);
+        box-shadow: none;
+    }
+    .theme-tertiary-btn:hover {
+        background-color: var(--sidebar-hover);
+        border-color: var(--primary);
+        color: var(--primary);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
 
-    /* Secondary Actions (Mess Cut) - Solid Lighter Blue */
-    .theme-secondary-btn {
-        background-color: var(--secondary);
-        color: var(--text-color); /* Dark Navy text for readability */
-    }
-    .theme-secondary-btn:hover {
-        background-color: #539ECA; /* Slightly darker Secondary Blue */
-        color: white; /* Switch to white text on hover */
-    }
-
-    /* Tertiary Actions (Skip Meal) - Outline style */
-    .theme-tertiary-btn {
-        background-color: transparent;
-        color: var(--text-color);
-        border: 2px solid var(--border-light);
-        box-shadow: none;
-    }
-    .theme-tertiary-btn:hover {
-        background-color: var(--sidebar-hover);
-        border-color: var(--primary);
-        color: var(--primary);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-
-    /* Mobile Layout Adjustment */
-    @media (max-width: 768px) {
-        .theme-action-btn {
-            font-size: 1rem;
-            padding: 14px;
-        }
-        .d-grid {
-            gap: 15px !important;
-        }
-    }
+    /* Mobile Layout Adjustment */
+    @media (max-width: 768px) {
+        .theme-action-btn {
+            font-size: 1rem;
+            padding: 14px;
+        }
+        .d-grid {
+            gap: 15px !important;
+        }
+    }
 </style>
 {% endblock %}
