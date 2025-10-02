@@ -2,39 +2,43 @@
 {% block content %}
 <div class="dashboard text-center py-5 px-3">
 
-    <h2 class="fw-bold mb-3" style="font-family: 'Playfair Display', serif; color: var(--text-color); font-size: 2.2rem;">
-        Hello, <span style="color: var(--primary);">{{ current_user.name }}</span>!
-    </h2>
-    <p class="mb-5 text-muted fw-light" style="font-family: 'Roboto', sans-serif;">
-        Your daily mess management is just a tap away.
-    </p>
-
-    <h4 class="fw-semibold mb-4" style="color: var(--secondary); font-family: 'Roboto', sans-serif;">
+    <h4 class="fw-bold mb-4" style="color: var(--text-color); font-family: 'Roboto', sans-serif;">
         ✨ Quick Actions
     </h4>
 
     <div class="d-grid gap-3 mx-auto" style="max-width: 450px;">
         
         <a href="{{ url_for('my_qr') }}" 
-           class="btn btn-lg w-100 theme-action-btn theme-qr-btn">
-            <i class="fas fa-qrcode me-2"></i> My QR Code
+           class="btn btn-lg w-100 theme-action-btn action-qr">
+            <i class="fas fa-qrcode me-2"></i> View My QR Code
         </a>
 
         <a href="{{ url_for('apply_mess_cut') }}" 
-           class="btn btn-lg w-100 theme-action-btn theme-cut-btn">
+           class="btn btn-lg w-100 theme-action-btn action-cut">
             <i class="fas fa-cut me-2"></i> Apply Mess Cut
         </a>
 
         <a href="{{ url_for('request_late_mess') }}" 
-           class="btn btn-lg w-100 theme-action-btn theme-late-btn">
+           class="btn btn-lg w-100 theme-action-btn action-late">
             <i class="fas fa-clock me-2"></i> Request Late Mess
+        </a>
+        
+        <!-- Including the other two actions from the card template for completeness, styled as buttons -->
+        <a href="{{ url_for('mess_skip') }}"
+           class="btn btn-lg w-100 theme-action-btn action-skip">
+            <i class="fas fa-calendar-times me-2"></i> Skip Upcoming Meal
+        </a>
+
+        <a href="{{ url_for('user_bills') }}"
+           class="btn btn-lg w-100 theme-action-btn action-bill">
+            <i class="fas fa-receipt me-2"></i> View My Bill
         </a>
     </div>
 
 </div>
 
 <style>
-    /* ------------------ Theme-Specific Styles ------------------ */
+    /* Using a distinct, colorful theme for the stacked buttons */
 
     .dashboard {
         font-family: 'Roboto', sans-serif;
@@ -42,48 +46,46 @@
 
     /* Base Button Style */
     .theme-action-btn {
-        border-radius: 15px; /* Softer, rounded corners */
+        border-radius: 12px; 
         font-weight: 600;
         font-size: 1.1rem;
         padding: 15px 20px;
-        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transition: all 0.3s ease-out;
         border: none;
-        color: var(--text-color); /* Use dark text on light backgrounds */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        color: white; /* White text for contrast on colored buttons */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .theme-action-btn:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        color: white; /* Change text to white on hover for better contrast */
+        transform: translateY(-3px); /* Gentle lift on hover */
+        box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+        color: white;
     }
 
-    /* QR Code Button (Calm Peach/Orange) */
-    .theme-qr-btn {
-        background: linear-gradient(135deg, #FFD078, #F7AB5C);
-        color: #9C7948; /* Darker text for base state */
-    }
-    .theme-qr-btn:hover {
-        background: linear-gradient(135deg, var(--primary), #E85E9A); /* Rose Pink focus on hover */
-    }
+    /* ------------------ Color Mapping (Based on previous action card theme) ------------------ */
 
-    /* Mess Cut Button (Soft Lavender/Purple) */
-    .theme-cut-btn {
-        background: linear-gradient(135deg, #E6E0F8, #C8B9F2);
-        color: #6A5B9B; /* Darker text for base state */
-    }
-    .theme-cut-btn:hover {
-        background: linear-gradient(135deg, var(--secondary), #A08CDD); /* Stronger Lavender on hover */
-    }
+    /* 1. Mess Cut: Red/Danger */
+    .action-cut { background-color: #E74C3C; } /* Red */
+    .action-cut:hover { background-color: #C0392B; } /* Darker Red */
 
-    /* Late Mess Button (Muted Mint/Green) */
-    .theme-late-btn {
-        background: linear-gradient(135deg, #A4E8CC, #7ED6A2);
-        color: #38761D; /* Darker text for base state */
-    }
-    .theme-late-btn:hover {
-        background: linear-gradient(135deg, #1abc9c, #16a085); /* Darker Mint on hover */
-    }
+    /* 2. Late Mess: Blue/Time */
+    .action-late { background-color: #3498DB; } /* Blue */
+    .action-late:hover { background-color: #2980B9; } /* Darker Blue */
+
+    /* 3. My QR: Green/Success */
+    .action-qr { background-color: #2ECC71; } /* Green */
+    .action-qr:hover { background-color: #27AE60; } /* Darker Green */
+
+    /* 4. Skip Meal: Orange/Warning */
+    .action-skip { background-color: #F39C12; } /* Orange */
+    .action-skip:hover { background-color: #E67E22; } /* Darker Orange */
+
+    /* 5. My Bill: Purple/Detail */
+    .action-bill { background-color: #9B59B6; } /* Purple */
+    .action-bill:hover { background-color: #8E44AD; } /* Darker Purple */
 
     /* Mobile Layout Adjustment */
     @media (max-width: 768px) {
@@ -92,7 +94,7 @@
             padding: 14px;
         }
         .d-grid {
-            gap: 15px !important; /* Slightly tighter gap on mobile */
+            gap: 15px !important; 
         }
     }
 </style>
