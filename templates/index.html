@@ -1,34 +1,45 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="text-center py-5" style="font-family: 'Roboto', sans-serif;">
+<div class="text-center py-5">
 
     <h1 class="fw-bold mb-3"
-        style="color: var(--text-color); font-size:2.4rem; font-family: 'Playfair Display', serif;">
-        Welcome to <span style="color: var(--secondary);">Anaswara Mess</span> 🍵</h1>
-    <p class="mb-5 text-muted" style="font-size:1.1rem; color: var(--sidebar-text) !important;">
-        Manage your meal plans, request late services, and access your account details easily.
+        style="color: var(--text-light); font-size: 2.2rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;">
+        ACCESS <span class="text-accent">HUB</span> INITIATED
+    </h1>
+    <p class="mb-5" style="font-size: 1.05rem; color: var(--text-muted);">
+        Your control panel for meal service management and billing information.
     </p>
 
     <div class="d-flex justify-content-center flex-wrap gap-4">
 
         <a href="{{ url_for('apply_mess_cut') }}"
-           class="shadow-sm fw-semibold text-decoration-none d-flex flex-column justify-content-center align-items-center action-card action-cut">
-           <i class="fas fa-cut mb-2" style="font-size: 1.5rem;"></i> Apply Mess Cut
+           class="action-card action-cut">
+            <i class="fas fa-cut mb-2"></i>
+            <span class="card-title">Initiate Meal Cut</span>
         </a>
 
         <a href="{{ url_for('request_late_mess') }}"
-           class="shadow-sm fw-semibold text-decoration-none d-flex flex-column justify-content-center align-items-center action-card action-late">
-           <i class="fas fa-clock mb-2" style="font-size: 1.5rem;"></i> Request Late Mess
+           class="action-card action-late">
+            <i class="fas fa-clock mb-2"></i>
+            <span class="card-title">Request Late Access</span>
+        </a>
+        
+        <a href="{{ url_for('mess_skip') }}"
+           class="action-card action-skip">
+            <i class="fas fa-calendar-times mb-2"></i>
+            <span class="card-title">Log Meal Skip</span>
         </a>
 
         <a href="{{ url_for('my_qr') }}"
-           class="shadow-sm fw-semibold text-decoration-none d-flex flex-column justify-content-center align-items-center action-card action-qr">
-           <i class="fas fa-qrcode mb-2" style="font-size: 1.5rem;"></i> View My QR
+           class="action-card action-qr">
+            <i class="fas fa-qrcode mb-2"></i>
+            <span class="card-title">View Access Code</span>
         </a>
-        
+
         <a href="{{ url_for('user_bills') }}"
-           class="shadow-sm fw-semibold text-decoration-none d-flex flex-column justify-content-center align-items-center action-card action-bill">
-           <i class="fas fa-receipt mb-2" style="font-size: 1.5rem;"></i> View My Bill
+           class="action-card action-bill">
+            <i class="fas fa-receipt mb-2"></i>
+            <span class="card-title">Retrieve Bill Data</span>
         </a>
 
     </div>
@@ -36,79 +47,77 @@
 </div>
 
 <style>
-    /* Since this template extends base.html, we can use the defined CSS variables:
-    --primary: #4ECDC4 (Teal)
-    --secondary: #FF6B6B (Coral)
-    --text-color: #374151 (Dark Slate)
-    --card-bg: #FDFDFD (Soft White)
+    /* Uses variables from the new Aetheric base.html */
+    /*
+    :root {
+        --bg-dark: #12121A;
+        --bg-card: #1C1C26;
+        --accent-blue: #00FFFF; 
+        --accent-glow: 0 0 10px var(--accent-blue);
+        --text-light: #E0E0E0;
+        --text-muted: #8F9BB3;
+        --border-color: #333345;
+        --transition-fast: 0.2s ease-in-out;
+    }
     */
 
     .action-card {
-        /* Base styles */
+        /* Base styles for the Aetheric look */
         width: 170px;
         height: 140px;
-        border-radius: 15px;
+        border-radius: var(--radius-soft);
         font-size: 1rem;
         text-align: center;
-        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transition: all var(--transition-fast);
         line-height: 1.3;
-        font-family: 'Roboto', sans-serif;
+        font-family: 'Inter', sans-serif;
         font-weight: 600 !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        border: 1px solid rgba(0,0,0,0.05); /* Soft border for definition */
-    }
+        
+        /* Dark background, light text, subtle glow */
+        background: var(--bg-card);
+        color: var(--text-light) !important; 
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 
-    .action-card:hover {
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        /* Flex container for content */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
         text-decoration: none;
     }
     
-    /* Themed Color Gradients for Cards */
-
-    /* Mess Cut: Soft Peach/Coral (Secondary Color) */
-    .action-cut {
-        background: linear-gradient(135deg, #FFE0E0, #FFC1C1);
-        color: #7A3F3F !important; /* Muted Red-Brown Text */
-    }
-    .action-cut:hover {
-        background: linear-gradient(135deg, #FF6B6B, #FA5B5B);
-        color: #fff !important;
-    }
-
-    /* Late Mess: Soft Teal (Primary Color) */
-    .action-late {
-        background: linear-gradient(135deg, #C2F0EE, #9BE0DD);
-        color: #3C7570 !important; /* Muted Teal Text */
-    }
-    .action-late:hover {
-        background: linear-gradient(135deg, #4ECDC4, #3CB0A7);
-        color: #fff !important;
-    }
-
-    /* My QR: Soft Yellow/Ochre */
-    .action-qr {
-        background: linear-gradient(135deg, #FFF6E0, #FBE5B2);
-        color: #8C6A3C !important; /* Muted Gold Text */
-    }
-    .action-qr:hover {
-        background: linear-gradient(135deg, #FAD6A5, #F7C080);
-        color: #fff !important;
-    }
-
-    /* My Bill: Soft Lavender/Purple */
-    .action-bill {
-        background: linear-gradient(135deg, #E6E0F8, #C8B9F2);
-        color: #6A5B9B !important; /* Muted Purple Text */
-    }
-    .action-bill:hover {
-        background: linear-gradient(135deg, #C8B9F2, #B3A0EB);
-        color: #fff !important;
+    .action-card .card-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
     }
 
     .action-card i {
-        /* Icons inherit text color in the base state */
-        color: inherit !important;
+        /* Icons are slightly larger and inherit text color */
+        font-size: 1.8rem;
+        color: var(--text-muted);
+        transition: color var(--transition-fast), text-shadow var(--transition-fast);
     }
+
+    .action-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--accent-blue); /* Highlight border on hover */
+        box-shadow: var(--accent-glow), 0 4px 15px rgba(0,0,0,0.6); /* Enhanced glow on hover */
+    }
+
+    .action-card:hover i {
+        color: var(--accent-blue);
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.7); /* Icon glow */
+    }
+    
+    .action-card:hover .card-title {
+        color: var(--accent-blue);
+    }
+
+    /* Optional: If you want to use different accent colors besides blue, 
+    you could set them here, but for a unified "Aetheric" look, the Cyber Blue 
+    accent is the strongest choice. I'll keep them unified.
+    */
 </style>
 {% endblock %}
