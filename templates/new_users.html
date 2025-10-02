@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container py-4">
+<div class="container py-4" style="font-family: 'Roboto', sans-serif;">
 
-    <h2 class="mb-5 text-center text-md-start fw-bold" style="font-family: 'Poppins', sans-serif; color: var(--primary);">
-        <i class="fas fa-hourglass-half me-2" style="color: var(--primary);"></i> Pending User Approvals
+    <h2 class="mb-5 text-center text-md-start fw-bold" style="font-family: 'Playfair Display', serif; color: var(--primary);">
+        ⏳ Pending User Approvals
     </h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -25,7 +25,7 @@
 
                     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-3 theme-card-header-bg">
                         <div class="fw-bold text-truncate"
-                             style="cursor:pointer; color: var(--primary);"
+                             style="cursor:pointer; color: var(--secondary);"
                              data-bs-toggle="collapse"
                              data-bs-target="#details{{ loop.index }}"
                              aria-expanded="false"
@@ -36,11 +36,11 @@
                         <div class="d-flex flex-column flex-sm-row gap-2 ms-auto approval-actions">
                             <a href="{{ url_for('approve_user', user_id=user.id) }}"
                                class="btn btn-sm theme-btn-approve">
-                                <i class="fas fa-check me-1"></i> Approve
+                                ✅ Approve
                             </a>
                             <a href="{{ url_for('reject_user', user_id=user.id) }}"
                                class="btn btn-sm theme-btn-reject">
-                                <i class="fas fa-times me-1"></i> Reject
+                                ❌ Reject
                             </a>
                         </div>
                     </div>
@@ -48,10 +48,10 @@
                     <div id="details{{ loop.index }}" class="collapse">
                         <div class="card-body theme-card-details">
                             <ul class="list-unstyled mb-0 small ps-2">
-                                <li><strong>Email:</strong> <span class="text-break text-muted">{{ user.email }}</span></li>
-                                <li><strong>Phone:</strong> <span class="text-muted">{{ user.phone }}</span></li>
-                                <li><strong>Course:</strong> <span class="text-muted">{{ user.course }}</span></li>
-                                <li><strong>User Type:</strong> <span class="badge bg-primary text-white fw-bold">{{ user.user_type|capitalize }}</span></li>
+                                <li><strong>Email:</strong> <span class="text-break">{{ user.email }}</span></li>
+                                <li><strong>Phone:</strong> {{ user.phone }}</li>
+                                <li><strong>Course:</strong> {{ user.course }}</li>
+                                <li><strong>User Type:</strong> <span class="badge bg-light text-dark fw-bold">{{ user.user_type|capitalize }}</span></li>
                             </ul>
                         </div>
                     </div>
@@ -61,8 +61,8 @@
             {% endfor %}
         </div>
     {% else %}
-        <div class="alert text-center rounded-3 mt-4" style="background-color: var(--sidebar-hover); color: var(--text-color); border: 1px solid var(--border-light);">
-            <i class="fas fa-check-circle me-2" style="color: var(--primary);"></i> **Success!** No pending users for approval right now.
+        <div class="alert text-center rounded-3 mt-4" style="background-color: #D4EDDA; color: #155724;">
+            **Success! ✨** No pending users for approval right now.
         </div>
     {% endif %}
 
@@ -72,62 +72,58 @@
     /* Card Container */
     .theme-approval-card {
         background-color: var(--card-bg);
-        border: 1px solid var(--border-light) !important;
+        border: 1px solid #E0E0E0 !important; /* Light Gray Border */
         transition: transform 0.2s, box-shadow 0.2s;
-        border-radius: var(--radius) !important;
     }
     .theme-approval-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 15px rgba(0,0,0,0.08);
     }
 
-    /* Card Header - Subtle Soft Gray Background */
+    /* Card Header */
     .theme-card-header-bg {
-        background-color: var(--sidebar-hover) !important; 
+        background-color: #F8F9FA !important; /* Very Light Gray/White Background */
         padding: 1rem 1.25rem;
-        border-bottom: 1px solid var(--border-light);
     }
     
     /* Collapsible Details Body */
     .theme-card-details {
-        background-color: var(--card-bg);
-        border-top: 1px dashed var(--border-light);
+        background-color: #F4F7F9; /* Very Soft Blue-Gray for background contrast */
+        border-top: 1px dashed #C0D3E0; /* Dotted line separation */
     }
     .theme-card-details li strong {
-        color: var(--text-color);
-        font-weight: 600;
-        margin-right: 5px;
+        color: #3B5B7D; /* Dark Slate Blue for labels */
     }
 
-    /* Approve Button (Primary Color) */
+    /* Approve Button (Teal/Green) */
     .theme-btn-approve {
-        background-color: var(--primary);
-        color: white;
+        background-color: #5BC0DE; /* Bootstrap Info Blue */
+        color: #FFFFFF;
         font-weight: 600;
-        transition: background-color 0.2s, opacity 0.2s;
-        border-radius: var(--radius);
-        border: 1px solid var(--primary);
+        transition: background-color 0.2s;
+        border-radius: 8px;
     }
     .theme-btn-approve:hover {
-        background-color: #34495E; /* Slightly darker primary */
-        color: white;
-        opacity: 0.9;
+        background-color: #46B8DA;
+        color: #FFFFFF;
     }
 
-    /* Reject Button (Secondary/Danger Color) */
+    /* Reject Button (Soft Red/Orange) */
     .theme-btn-reject {
-        background-color: var(--secondary);
+        background-color: #F0AD4E; /* Bootstrap Warning Orange */
         color: white;
         font-weight: 600;
-        transition: background-color 0.2s, opacity 0.2s;
-        border-radius: var(--radius);
-        border: 1px solid var(--secondary);
+        transition: background-color 0.2s;
+        border-radius: 8px;
     }
     .theme-btn-reject:hover {
-        background-color: #C0392B; /* Slightly darker secondary */
+        background-color: #EC971F;
         color: white;
-        opacity: 0.9;
     }
+    
+    /* Empty State Alert */
+    /* I've changed the inline style for a cleaner green success alert */
+
 
     /* Mobile Adjustments */
     @media (max-width: 575.98px) {
@@ -137,3 +133,7 @@
         }
         .approval-actions a {
             flex-grow: 1;
+        }
+    }
+</style>
+{% endblock %}
