@@ -240,14 +240,14 @@ body {
                 <a href="{{ url_for('new_users_list') }}" class="{% if request.endpoint == 'new_users_list' %}active{% endif %}"><i class="fas fa-user-plus"></i> New Users</a>
                 <a href="{{ url_for('mess_cut_list') }}" class="{% if request.endpoint == 'mess_cut_list' %}active{% endif %}"><i class="fas fa-scissors"></i> Mess Cuts</a>
                 <a href="{{ url_for('late_mess_list') }}" class="{% if request.endpoint == 'late_mess_list' %}active{% endif %}"><i class="fas fa-clock"></i> Late Mess</a>
-                                <a href="{{ url_for('mess_menu') }}" class="{% if request.endpoint == 'mess_menu' %}active{% endif %}"><i class="fas fa-book-open"></i> Mess Menu</a>
-                                <a href="{{ url_for('add_fine') }}" class="{% if request.endpoint == 'add_fine' %}active{% endif %}"><i class="fas fa-money-check-alt"></i> Add Fine</a>
+                <a href="{{ url_for('mess_menu') }}" class="{% if request.endpoint == 'mess_menu' %}active{% endif %}"><i class="fas fa-book-open"></i> Mess Menu</a>
+                <a href="{{ url_for('add_fine') }}" class="{% if request.endpoint == 'add_fine' %}active{% endif %}"><i class="fas fa-money-check-alt"></i> Add Fine</a>
                 <a href="{{ url_for('admin_mess_skips') }}" class="{% if request.endpoint == 'admin_mess_skips' %}active{% endif %}"><i class="fas fa-ban"></i> Skips {% if skip_count %}<span class="badge bg-danger ms-auto">{{ skip_count }}</span>{% endif %}</a>
                 <a href="{{ url_for('generate_bills') }}" class="{% if request.endpoint == 'generate_bills' %}active{% endif %}"><i class="fas fa-file-invoice-dollar"></i> Bills</a>
             {% else %}
                 <a href="{{ url_for('user_dashboard') }}" class="{% if request.endpoint == 'user_dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a>
-                                <a href="{{ url_for('mess_menu') }}" class="{% if request.endpoint == 'mess_menu' %}active{% endif %}"><i class="fas fa-book-open"></i> Mess Menu</a>
-                                <a href="{{ url_for('apply_mess_cut') }}" class="{% if request.endpoint == 'apply_mess_cut' %}active{% endif %}"><i class="fas fa-cut"></i> Apply Cut</a>
+                <a href="{{ url_for('mess_menu') }}" class="{% if request.endpoint == 'mess_menu' %}active{% endif %}"><i class="fas fa-book-open"></i> Mess Menu</a>
+                <a href="{{ url_for('apply_mess_cut') }}" class="{% if request.endpoint == 'apply_mess_cut' %}active{% endif %}"><i class="fas fa-cut"></i> Apply Cut</a>
                 <a href="{{ url_for('request_late_mess') }}" class="{% if request.endpoint == 'request_late_mess' %}active{% endif %}"><i class="fas fa-utensils"></i> Late Mess</a>
                 <a href="{{ url_for('my_qr') }}" class="{% if request.endpoint == 'my_qr' %}active{% endif %}"><i class="fas fa-qrcode"></i> My QR</a>
                 <a href="{{ url_for('mess_skip') }}" class="{% if request.endpoint == 'mess_skip' %}active{% endif %}"><i class="fas fa-calendar-times"></i> Skip Meal</a>
