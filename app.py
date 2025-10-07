@@ -1596,7 +1596,7 @@ def generate_bills():
                 fine_row = cur.fetchone()
                 total_fines = float(fine_row['total_fines'] or 0.0)
 
-                reduction_amount = round(0.67 * daily_amount * mess_cut_days, 2)
+                reduction_amount = round( daily_amount * mess_cut_days, 2)
                 total_amount = round(
                     daily_amount * chargeable_days
                     - reduction_amount
