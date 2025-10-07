@@ -1492,6 +1492,13 @@ from flask import (
 )
 from datetime import date, datetime, timedelta
 import calendar, csv, io
+from flask import (
+    Flask, render_template, request, redirect, url_for,
+    flash, Response, session, current_app
+)
+from datetime import date, datetime, timedelta
+import calendar, io, csv, json
+
 
 @app.route('/admin/generate_bills', methods=['GET', 'POST'])
 @login_required
@@ -1500,10 +1507,11 @@ def generate_bills():
     Generate or regenerate monthly bills.
 
     • Calculates active days (minus mess-closed days).
-    • Subtracts mess-cut days (✅ now counts all mess cuts, even 1-day).
+    • Subtracts mess-cut days (✅ counts all mess cuts, even 1-day).
     • Adds fines (includes breakfast, lunch, dinner, and snacks).
     • Adds establishment fee.
     • Deletes existing bills for the same month before inserting new ones.
+    • ✅ Retains last generated bills after reload (via session).
     """
     if not getattr(current_user, 'is_admin', False):
         flash("Unauthorized", "danger")
@@ -1548,7 +1556,7 @@ def generate_bills():
             )
             base_active_days = total_days - closed_count
 
-            # 🔑 Delete any old bills for this month
+            # 🔑 Delete old bills for this month
             cur.execute("DELETE FROM bills WHERE bill_date=%s", (bill_date,))
             conn.commit()
 
@@ -1577,13 +1585,12 @@ def generate_bills():
                     }
                     # Ignore mess-closed days
                     active_cut_dates = {d for d in cut_dates if d not in closed_dates}
-
-                    # ✅ Count all active cut days (removed ≥3-day restriction)
+                    # ✅ Count all cut days (no 3-day rule)
                     mess_cut_days += len(active_cut_dates)
 
                 chargeable_days = max(base_active_days - mess_cut_days, 0)
 
-                # ---- fines (includes snacks automatically) ----
+                # ---- fines ----
                 cur.execute("""
                     SELECT SUM(fine_amount) AS total_fines
                     FROM fines
@@ -1601,7 +1608,7 @@ def generate_bills():
                     + total_fines, 2
                 )
 
-                # Insert the new bill
+                # Insert bill
                 cur.execute("""
                     INSERT INTO bills
                       (user_id, bill_date, daily_amount,
@@ -1628,30 +1635,40 @@ def generate_bills():
                 })
 
             conn.commit()
+
+            # ✅ Save results in session for reload persistence
+            session['last_generated_bills'] = json.dumps(bills_generated)
+            session['last_bill_month'] = bill_month
+
             flash(f"✅ Bills generated for {len(bills_generated)} users (month {bill_month})", "success")
 
-        # CSV export
-        if request.args.get('download') == 'csv' and bills_generated:
-            si = io.StringIO()
-            writer = csv.writer(si)
-            writer.writerow([
-                'User', 'Daily Amount', 'Active Days', 'Mess Cut Days',
-                'Reduction', 'Establishment Fee', 'Fines', 'Total Amount'
-            ])
-            for b in bills_generated:
+        # 🧾 CSV Export
+        if request.args.get('download') == 'csv':
+            # Try from current list or session
+            if not bills_generated and 'last_generated_bills' in session:
+                bills_generated = json.loads(session['last_generated_bills'])
+
+            if bills_generated:
+                si = io.StringIO()
+                writer = csv.writer(si)
                 writer.writerow([
-                    b['user'], b['daily_amount'], b['active_days'],
-                    b['mess_cut_days'], b['reduction_amount'],
-                    b['establishment_fee'], b['total_fines'],
-                    b['total_amount']
+                    'User', 'Daily Amount', 'Active Days', 'Mess Cut Days',
+                    'Reduction', 'Establishment Fee', 'Fines', 'Total Amount'
                 ])
-            return Response(
-                si.getvalue(), mimetype="text/csv",
-                headers={
-                    "Content-Disposition":
-                        f"attachment; filename=bills_{start_date_obj.strftime('%Y%m')}.csv"
-                }
-            )
+                for b in bills_generated:
+                    writer.writerow([
+                        b['user'], b['daily_amount'], b['active_days'],
+                        b['mess_cut_days'], b['reduction_amount'],
+                        b['establishment_fee'], b['total_fines'],
+                        b['total_amount']
+                    ])
+                return Response(
+                    si.getvalue(), mimetype="text/csv",
+                    headers={
+                        "Content-Disposition":
+                            f"attachment; filename=bills_{session.get('last_bill_month', 'unknown')}.csv"
+                    }
+                )
 
     except Exception as e:
         if conn:
@@ -1664,10 +1681,12 @@ def generate_bills():
         if conn:
             conn.close()
 
+    # ✅ Retrieve bills from session on reload
+    if not bills_generated and 'last_generated_bills' in session:
+        bills_generated = json.loads(session['last_generated_bills'])
+
     return render_template('admin_generate_bills.html',
                            bills_generated=bills_generated)
-
-
 
 # Reset bills session
 @app.route('/admin/reset_bills', methods=['POST'])
