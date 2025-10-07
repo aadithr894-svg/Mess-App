@@ -106,7 +106,6 @@
 
         <label for="end_date">End Date:</label>
         <input type="date" id="end_date" name="end_date" required onkeydown="return false;">
-        <small>⚠️ Minimum 3 consecutive days</small>
 
         <button type="submit">✅ Apply Mess Cut</button>
       </form>
@@ -143,10 +142,9 @@
         startInput.value = minStartDateStr;
       }
 
-      // End date: minimum 3 days after start
+      // End date: minimum same as start date (1-day cut allowed)
       const startDate = new Date(startInput.value);
       const minEndDate = new Date(startDate);
-      minEndDate.setDate(startDate.getDate() + 2);
       const minEndDateStr = formatDate(minEndDate);
       endInput.min = minEndDateStr;
 
