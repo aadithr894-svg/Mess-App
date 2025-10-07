@@ -600,7 +600,7 @@ def apply_mess_cut():
     tomorrow = today + timedelta(days=1)
     current_time = datetime.now().time()
     cutoff_time = datetime.strptime("22:00", "%H:%M").time()  # 10 PM
-    min_end_date = today + timedelta(days=1)  # 1-day minimum (updated)
+    min_end_date = today + timedelta(days=3)
 
     if request.method == 'POST':
         start_date_str = request.form.get('start_date')
@@ -613,7 +613,7 @@ def apply_mess_cut():
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
 
-        # Cannot select past or current dates
+        # Cannot select past dates
         if start_date <= today or end_date <= today:
             flash("Cannot select today or past dates.", "danger")
             return redirect(url_for('apply_mess_cut'))
@@ -623,7 +623,7 @@ def apply_mess_cut():
             flash("Cannot apply mess cut for tomorrow after 10 PM today.", "danger")
             return redirect(url_for('apply_mess_cut'))
 
-        # ✅ Removed 3-day restriction — user can apply even for 1 day
+
 
         # ---------------- POOL CONNECTION ----------------
         conn = mysql_pool.get_connection()  # Get connection from pool
