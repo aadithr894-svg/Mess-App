@@ -1500,8 +1500,8 @@ def generate_bills():
     Generate or regenerate monthly bills.
 
     • Calculates active days (minus mess-closed days).
-    • Subtracts mess-cut days (if ≥3 consecutive).
-    • Adds fines (now includes breakfast, lunch, dinner **and snacks**).
+    • Subtracts mess-cut days (✅ now counts all mess cuts, even 1-day).
+    • Adds fines (includes breakfast, lunch, dinner, and snacks).
     • Adds establishment fee.
     • Deletes existing bills for the same month before inserting new ones.
     """
@@ -1577,9 +1577,9 @@ def generate_bills():
                     }
                     # Ignore mess-closed days
                     active_cut_dates = {d for d in cut_dates if d not in closed_dates}
-                    # Only count if ≥3 continuous days
-                    if len(active_cut_dates) >= 3:
-                        mess_cut_days += len(active_cut_dates)
+
+                    # ✅ Count all active cut days (removed ≥3-day restriction)
+                    mess_cut_days += len(active_cut_dates)
 
                 chargeable_days = max(base_active_days - mess_cut_days, 0)
 
@@ -1593,7 +1593,7 @@ def generate_bills():
                 fine_row = cur.fetchone()
                 total_fines = float(fine_row['total_fines'] or 0.0)
 
-                reduction_amount = round( daily_amount * mess_cut_days, 2)
+                reduction_amount = round(daily_amount * mess_cut_days, 2)
                 total_amount = round(
                     daily_amount * chargeable_days
                     - reduction_amount
@@ -1666,6 +1666,7 @@ def generate_bills():
 
     return render_template('admin_generate_bills.html',
                            bills_generated=bills_generated)
+
 
 
 # Reset bills session
