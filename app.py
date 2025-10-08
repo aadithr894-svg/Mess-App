@@ -1603,7 +1603,7 @@ def generate_bills():
                 reduction_amount = round(daily_amount * mess_cut_days, 2)
                 total_amount = round(
                     daily_amount * chargeable_days
-                    - reduction_amount
+                    
                     + establishment_fee
                     + total_fines, 2
                 )
